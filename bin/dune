@@ -1,0 +1,4 @@
+(executable
+ (public_name dlx)
+ (name main)
+ (libraries dlx))

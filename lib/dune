@@ -1,0 +1,5 @@
+(library
+ (name dlx)
+ (public_name dlx)
+ (preprocess (pps ppx_deriving.show ppx_deriving.make))
+ (libraries containers zarith))
