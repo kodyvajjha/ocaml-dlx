@@ -92,6 +92,8 @@ module DLList = struct
 end
 
 module CDLList = struct
+  exception Empty
+
   (* No option since in a cdll every node has neighbours.*)
   type 'a node = {
     el: 'a;
@@ -99,45 +101,52 @@ module CDLList = struct
     mutable right: 'a node;
   }
 
-  and 'a t = { mutable head: 'a node option }
+  and 'a t = { mutable head: 'a node }
 
-  let rec pp_node ppa fpf node =
-    CCFormat.fprintf fpf "@[%a <-> %a@]" ppa node.el (pp_node ppa) node.left
+  let pp_node ppa fpf node = CCFormat.fprintf fpf "@[%a@]" ppa node.el
 
   let show_node node = CCFormat.printf "@[%a@.@]" CCFormat.(pp_node int) node
 
-  let pp ppa fpf l =
-    CCFormat.fprintf fpf "%a" CCFormat.(some (pp_node ppa)) l.head
+  let pp ppa fpf l = CCFormat.fprintf fpf "%a" (pp_node ppa) l.head
 
   let create x =
     let rec node = { el = x; left = node; right = node } in
     node
 
-  let right (lst : 'a t) =
-    match lst.head with
-    | None -> ()
-    | Some head -> lst.head <- Some head.right
+  let shift_right (lst : 'a t) = lst.head <- lst.head.right
 
-  let left (lst : 'a t) =
-    match lst.head with
-    | None -> ()
-    | Some head -> lst.head <- Some head.left
+  let shift_left (lst : 'a t) = lst.head <- lst.head.left
 
   let of_list l : 'a t =
     match l with
-    | [] -> { head = None }
+    | [] -> (* If the list is empty, DLL has no head. *) raise Empty
     | h :: t ->
+      (* Start by creating a node which points to itself on the left and right*)
       let first = create h in
-      let rec loop ~cur ~rem =
-        match rem with
+      let rec loop ~cur ~rest =
+        match rest with
         | [] ->
           cur.right <- first;
           first.left <- cur;
           first
         | n :: ns ->
-          let node = { el = n; left = cur; right = loop ~cur ~rem:ns } in
-          cur.right <- node;
-          node
+          (* Start with the first nontrivial element, and create a node. Left pointer to this node points to the node where you start out from. Right pointer does not exist just yet and will be assigned in the subsequent recursive call. We just assign it something just now as a placeholder (We could do None, but we don't like the option monad in this module.) *)
+          let next_node = { el = n; left = cur; right = cur } in
+          (* Right pointer of current node points to the node just created.  *)
+          cur.right <- next_node;
+          (* Carry out recursion with the next node as current. *)
+          loop ~cur:next_node ~rest:ns
       in
-      { head = Some (loop ~cur:first ~rem:t) }
+
+      { head = loop ~cur:first ~rest:t }
+
+  let to_list (lst : 'a t) =
+    let head_node = lst.head in
+    let res = ref [ head_node.el ] in
+    let cur_node = ref head_node.right in
+    while !cur_node != head_node do
+      res := !res @ [ !cur_node.el ];
+      cur_node := !cur_node.right
+    done;
+    !res
 end

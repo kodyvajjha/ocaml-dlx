@@ -21,5 +21,23 @@ open Dlx
 
 let () =
   let open Dll.CDLList in
-  let l = of_list [ 1; 2; 3; 4 ] in
-  CCFormat.printf "%a" CCFormat.(pp int) l
+  let l = of_list [ 1; 2; 3; 4; 5 ] in
+  (* show_node l.head.left; *)
+  show_node l.head;
+  show_node l.head.left;
+  show_node l.head.left.left;
+  show_node l.head.left.left.left;
+  show_node l.head.left.left.left.left;
+  show_node l.head;
+  show_node l.head.right;
+  show_node l.head.right.right;
+  show_node l.head.right.right.right;
+  show_node l.head.right.right.right.right
+
+let () =
+  let open Dll.CDLList in
+  let orig = CCList.(0 -- 10000) in
+  let l = of_list orig in
+  orig = to_list l |> string_of_bool |> print_endline
+
+(* CCFormat.printf "%a" CCFormat.(pp int) l *)
