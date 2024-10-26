@@ -105,7 +105,8 @@ module CDLList = struct
 
   let pp_node ppa fpf node = CCFormat.fprintf fpf "@[%a@]" ppa node.el
 
-  let show_node node = CCFormat.printf "@[%a@.@]" CCFormat.(pp_node int) node
+  let show_int_node node =
+    CCFormat.printf "@[%a@.@]" CCFormat.(pp_node int) node
 
   let pp ppa fpf l = CCFormat.fprintf fpf "%a" (pp_node ppa) l.head
 

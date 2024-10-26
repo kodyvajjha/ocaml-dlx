@@ -22,17 +22,17 @@ open Dlx
 let () =
   let open Dll.CDLList in
   let l = of_list [ 1; 2; 3; 4; 5 ] in
-  (* show_node l.head.left; *)
-  show_node l.head;
-  show_node l.head.left;
-  show_node l.head.left.left;
-  show_node l.head.left.left.left;
-  show_node l.head.left.left.left.left;
-  show_node l.head;
-  show_node l.head.right;
-  show_node l.head.right.right;
-  show_node l.head.right.right.right;
-  show_node l.head.right.right.right.right
+  (* show_int_node l.head.left; *)
+  show_int_node l.head;
+  show_int_node l.head.left;
+  show_int_node l.head.left.left;
+  show_int_node l.head.left.left.left;
+  show_int_node l.head.left.left.left.left;
+  show_int_node l.head;
+  show_int_node l.head.right;
+  show_int_node l.head.right.right;
+  show_int_node l.head.right.right.right;
+  show_int_node l.head.right.right.right.right
 
 let () =
   let open Dll.CDLList in
