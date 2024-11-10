@@ -10,4 +10,14 @@ let () =
       [ "d"; "e"; "g" ];
     ]
   in
-  ()
+  let cur = Dlx.Algox.mk ~items ~_options:options in
+  CCOption.iter print_endline cur.root.name;
+  CCOption.iter print_endline
+    CCOption.(
+      let* node = cur.root.left in
+      node.name);
+  CCOption.iter print_endline
+    CCOption.(
+      let* node1 = cur.root.left in
+      let* node2 = node1.left in
+      node2.name)
