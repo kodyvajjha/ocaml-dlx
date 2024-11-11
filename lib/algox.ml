@@ -8,8 +8,27 @@ type node = {
   mutable left: node option; (* Non-header nodes are not linked left/right*)
   mutable right: node option; (* Non-header nodes are not linked left/right*)
 }
+[@@deriving make]
 
 type t = { mutable root: node }
+
+let left node =
+  CCOption.get_exn_or "No node to the left of this node!" node.left
+
+let right node =
+  CCOption.get_exn_or "No node to the right of this node!" node.right
+
+let find ~name ~(items : string list) node =
+  let num_items = CCList.length items in
+  let cur = ref node in
+  let ans = ref None in
+  for _ = 1 to num_items + 1 do
+    if name = CCOption.get_exn_or "Failed getting name" !cur.name then
+      ans := Some !cur
+    else
+      cur := CCOption.get_exn_or "No node to the right!" !cur.right
+  done;
+  CCOption.get_exn_or "Could not find id with that name." !ans
 
 let init () =
   let rec node =
@@ -26,24 +45,6 @@ let init () =
   in
   { root = node }
 
-let mk_node old name : node =
-  let new_node : node =
-    {
-      id = old.id + 1;
-      top = None;
-      name = Some name;
-      len = None;
-      up = None;
-      down = None;
-      left = Some old;
-      right = None;
-    }
-  in
-  old.right <- Some new_node;
-  new_node.up <- Some new_node;
-  new_node.down <- Some new_node;
-  new_node
-
 let mk ~(items : string list) ~(_options : string list list) : t =
   let itarray = CCArray.of_list items in
   let num_items = CCArray.length itarray in
@@ -58,32 +59,11 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       head.left <- Some !cur.root;
       cur := { root = head };
       (* Set up spacer node *)
-      let _spacer_node : node =
-        {
-          id = i;
-          top = Some 0;
-          name = None;
-          len = None;
-          up = Some head;
-          down = None;
-          left = None;
-          right = None;
-        }
-      in
+      let _spacer_node : node = make_node ~id:i ~top:0 () in
       ()
-      (* cur := { root = spacer_node } *)
     ) else (
       let new_node : node =
-        {
-          id = i;
-          top = None;
-          name = Some itarray.(i - 1);
-          len = Some 0;
-          up = None;
-          down = None;
-          left = Some !cur.root;
-          right = None;
-        }
+        make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur.root ()
       in
       !cur.root.right <- Some new_node;
       new_node.up <- Some new_node;
@@ -91,4 +71,5 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       cur := { root = new_node }
     )
   done;
+
   !cur
