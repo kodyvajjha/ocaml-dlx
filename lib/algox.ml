@@ -10,13 +10,49 @@ type node = {
 }
 [@@deriving make]
 
-type t = { mutable root: node }
-
 let left node =
   CCOption.get_exn_or "No node to the left of this node!" node.left
 
 let right node =
   CCOption.get_exn_or "No node to the right of this node!" node.right
+
+let box node =
+  let module B = PrintBox in
+  let module C = CCFormat in
+  let option_string_of pp = C.(to_string (some pp)) in
+  let id = node.id in
+  let top = option_string_of C.int node.top in
+  let name = option_string_of C.string node.name in
+  let len = option_string_of C.int node.len in
+
+  B.(
+    frame
+    @@ vlist
+         [
+           hlist ~bars:false [ text " "; int id; text " " ];
+           hlist [ text top; text name; text len ];
+         ])
+
+let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
+
+type t = { mutable root: node }
+
+let pp fpf t =
+  let module C = CCFormat in
+  let option_string_of pp = C.(to_string (some pp)) in
+  let main_box =
+    let module B = PrintBox in
+    let arr = CCArray.make 8 B.empty in
+    let root_node = ref t.root in
+    for i = 0 to 7 do
+      arr.(i) <-
+        B.sprintf "(%d,%s)" !root_node.id
+          (option_string_of C.string !root_node.name);
+      root_node := right !root_node
+    done;
+    CCArray.init 8 (fun n -> [| arr.(n) |]) |> B.grid
+  in
+  CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
 let find ~name ~(items : string list) node =
   let num_items = CCList.length items in
