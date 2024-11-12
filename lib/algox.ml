@@ -43,20 +43,19 @@ type t = {
 let pp fpf t =
   let module C = CCFormat in
   let num_items = CCList.length t.items in
-  let option_string_of pp = C.(to_string (some pp)) in
+  let _option_string_of pp = C.(to_string (some pp)) in
   let main_box =
     let module B = PrintBox in
-    let arr = CCArray.make 8 B.empty in
+    let arr = CCArray.make (num_items + 1) B.empty in
     let root_node = ref t.root in
-    for i = 0 to 7 do
-      arr.(i) <-
-        (*box !root_node;*)
-        B.sprintf "(%d,%s)" !root_node.id
-          (option_string_of C.string !root_node.name);
+    for i = 0 to num_items do
+      arr.(i) <- box !root_node;
+      (* B.sprintf "(%d,%s)" !root_node.id
+         (_option_string_of C.string !root_node.name); *)
       root_node := right !root_node
     done;
-    CCArray.init num_items (fun row ->
-        Array.init num_items (fun col ->
+    CCArray.init (num_items + 1) (fun row ->
+        Array.init (num_items + 1) (fun col ->
             if row > 0 then
               B.empty
             else

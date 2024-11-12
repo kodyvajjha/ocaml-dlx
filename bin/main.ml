@@ -30,7 +30,7 @@ let () =
    done *)
 
 let () =
-  let items = [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "i" ] in
+  let items = [ "a"; "b"; "c"; "d"; "e"; "f"; "g" ] in
   let options =
     [
       [ "c"; "e" ];
