@@ -35,10 +35,14 @@ let box node =
 
 let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
 
-type t = { mutable root: node }
+type t = {
+  mutable root: node;
+  items: string list;
+}
 
 let pp fpf t =
   let module C = CCFormat in
+  let num_items = CCList.length t.items in
   let option_string_of pp = C.(to_string (some pp)) in
   let main_box =
     let module B = PrintBox in
@@ -46,11 +50,18 @@ let pp fpf t =
     let root_node = ref t.root in
     for i = 0 to 7 do
       arr.(i) <-
+        (*box !root_node;*)
         B.sprintf "(%d,%s)" !root_node.id
           (option_string_of C.string !root_node.name);
       root_node := right !root_node
     done;
-    CCArray.init 8 (fun n -> [| arr.(n) |]) |> B.grid
+    CCArray.init num_items (fun row ->
+        Array.init num_items (fun col ->
+            if row > 0 then
+              B.empty
+            else
+              arr.(col)))
+    |> B.grid |> B.frame
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
@@ -66,7 +77,7 @@ let find ~name ~(items : string list) node =
   done;
   CCOption.get_exn_or "Could not find id with that name." !ans
 
-let init () =
+let init ~items () =
   let rec node =
     {
       id = 0;
@@ -79,12 +90,12 @@ let init () =
       right = Some node;
     }
   in
-  { root = node }
+  { root = node; items }
 
 let mk ~(items : string list) ~(_options : string list list) : t =
   let itarray = CCArray.of_list items in
   let num_items = CCArray.length itarray in
-  let cur = ref (init ()) in
+  let cur = ref (init ~items ()) in
   (* Immutable bindings FTW!*)
   let head = !cur.root in
   (* Process items *)
@@ -93,7 +104,7 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       (* Create a circular linked list on top. *)
       !cur.root.right <- Some head;
       head.left <- Some !cur.root;
-      cur := { root = head };
+      cur := { root = head; items };
       (* Set up spacer node *)
       let _spacer_node : node = make_node ~id:i ~top:0 () in
       ()
@@ -104,7 +115,7 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       !cur.root.right <- Some new_node;
       new_node.up <- Some new_node;
       new_node.down <- Some new_node;
-      cur := { root = new_node }
+      cur := { root = new_node; items }
     )
   done;
 
