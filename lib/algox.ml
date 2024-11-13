@@ -93,8 +93,9 @@ let init ~items () =
 
 let mk ~(items : string list) ~(_options : string list list) : t =
   let itarray = CCArray.of_list items in
-  let _optarray = CCArray.map CCArray.of_list (CCArray.of_list _options) in
+  let optarray = CCArray.map CCArray.of_list (CCArray.of_list _options) in
   let num_items = CCArray.length itarray in
+  let num_options = CCArray.length optarray in
   let cur = ref (init ~items ()) in
   (* Immutable bindings FTW!*)
   let head = !cur.root in
@@ -118,5 +119,16 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       cur := { root = new_node; items }
     )
   done;
-
+  let cur_opt = ref optarray.(0) in
+  for n = 1 to num_options do
+    let k = CCArray.length !cur_opt in
+    for j = 0 to k - 1 do
+      let node = find ~name:!cur_opt.(j) !cur in
+      node.len <- CCOption.map (fun x -> x + 1) node.len
+    done;
+    if n = num_options then
+      ()
+    else
+      cur_opt := optarray.(n)
+  done;
   !cur
