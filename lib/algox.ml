@@ -64,15 +64,15 @@ let pp fpf t =
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
-let find ~name ~(items : string list) node =
-  let num_items = CCList.length items in
-  let cur = ref node in
+let find ~name t =
+  let num_items = CCList.length t.items in
+  let cur = ref t.root in
   let ans = ref None in
   for _ = 1 to num_items + 1 do
     if name = CCOption.get_exn_or "Failed getting name" !cur.name then
       ans := Some !cur
     else
-      cur := CCOption.get_exn_or "No node to the right!" !cur.right
+      cur := right !cur
   done;
   CCOption.get_exn_or "Could not find id with that name." !ans
 
@@ -93,6 +93,7 @@ let init ~items () =
 
 let mk ~(items : string list) ~(_options : string list list) : t =
   let itarray = CCArray.of_list items in
+  let _optarray = CCArray.map CCArray.of_list (CCArray.of_list _options) in
   let num_items = CCArray.length itarray in
   let cur = ref (init ~items ()) in
   (* Immutable bindings FTW!*)

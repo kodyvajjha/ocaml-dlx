@@ -43,10 +43,10 @@ let () =
   in
   let cur = Dlx.Algox.mk ~items ~_options:options in
 
-  (* let node_of = Dlx.Algox.find ~name:"i" ~items cur.root in
-     CCFormat.printf "@.Name: %a, id: %d"
-       CCFormat.(some string)
-       node_of.name node_of.id; *)
+  let node_of = Dlx.Algox.find ~name:"c" cur in
+  CCFormat.printf "@.Name: %a, id: %d@."
+    CCFormat.(some string)
+    node_of.name node_of.id;
 
   (* CCFormat.printf "@.Node: %a" CCFormat.(some Dlx.Algox.pp_node) cur.root.right *)
   (* print_nodes ~num:7 cur *)
