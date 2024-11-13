@@ -1,0 +1,3 @@
+(test
+ (name traverse)
+ (libraries dlx containers printbox printbox-text))
