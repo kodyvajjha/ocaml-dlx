@@ -30,7 +30,7 @@ let box node =
     @@ vlist
          [
            hlist ~bars:false [ text " "; int id; text " " ];
-           hlist [ text top; text name; text len ];
+           hlist [ text ("TOP:" ^ top); text name; text ("LEN:" ^ len) ];
          ])
 
 let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
@@ -105,10 +105,7 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       (* Create a circular linked list on top. *)
       !cur.root.right <- Some head;
       head.left <- Some !cur.root;
-      cur := { root = head; items };
-      (* Set up spacer node *)
-      let _spacer_node : node = make_node ~id:i ~top:0 () in
-      ()
+      cur := { root = head; items }
     ) else (
       let new_node : node =
         make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur.root ()
@@ -119,12 +116,20 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       cur := { root = new_node; items }
     )
   done;
+  (* Set up first spacer node *)
+  let spacer_node = ref (make_node ~id:(num_items + 1) ~top:0 ()) in
   let cur_opt = ref optarray.(0) in
   for n = 1 to num_options do
     let k = CCArray.length !cur_opt in
     for j = 0 to k - 1 do
-      let node = find ~name:!cur_opt.(j) !cur in
-      node.len <- CCOption.map (fun x -> x + 1) node.len
+      let nodej = find ~name:!cur_opt.(j) !cur in
+      nodej.len <- CCOption.map (fun x -> x + 1) nodej.len;
+      let q = CCOption.get_exn_or "no up node" nodej.up in
+      let new_node = make_node ~id:(!spacer_node.id + j) ~top:nodej.id () in
+      new_node.up <- Some q;
+      q.down <- Some new_node;
+      new_node.down <- Some nodej;
+      nodej.up <- Some new_node
     done;
     if n = num_options then
       ()

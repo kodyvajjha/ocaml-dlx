@@ -42,7 +42,7 @@ let () =
     ]
   in
   let cur = Dlx.Algox.mk ~items ~_options:options in
-  ignore cur
+  CCFormat.printf "%a" Dlx.Algox.pp cur
 (*
      let node_of = Dlx.Algox.find ~name:"c" cur in
      CCFormat.printf "@.Name: %a, id: %d@."
@@ -51,4 +51,3 @@ let () =
 
 (* CCFormat.printf "@.Node: %a" CCFormat.(some Dlx.Algox.pp_node) cur.root.right *)
 (* print_nodes ~num:7 cur *)
-(* CCFormat.printf "%a" Dlx.Algox.pp cur *)
