@@ -88,9 +88,9 @@ let pp fpf t =
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
-let find ~name t =
-  let num_items = CCList.length t.items in
-  let cur = ref t.root in
+let find ~name ~items root =
+  let num_items = CCList.length items in
+  let cur = ref root in
   let ans = ref None in
   for _ = 1 to num_items + 1 do
     if name = CCOption.get_exn_or "Failed getting name" !cur.name then
@@ -100,7 +100,7 @@ let find ~name t =
   done;
   CCOption.get_exn_or "Could not find id with that name." !ans
 
-let init ~items ~options () =
+let init () =
   let rec node =
     {
       id = 0;
@@ -113,7 +113,7 @@ let init ~items ~options () =
       right = Some node;
     }
   in
-  { root = node; nodes = []; items; options }
+  node
 
 let mk ~(items : string list) ~(options : string list list) : t =
   let itarray = CCArray.of_list items in
@@ -121,24 +121,24 @@ let mk ~(items : string list) ~(options : string list list) : t =
   let num_items = CCArray.length itarray in
   let num_options = CCArray.length optarray in
   let node_list = ref [] in
-  let cur = ref (init ~items ~options ()) in
+  let cur = ref (init ()) in
   (* Immutable bindings FTW!*)
-  let head = !cur.root in
+  let head = !cur in
   (* Process items *)
   for i = 1 to num_items + 1 do
     if i = num_items + 1 then (
       (* Create a circular linked list on top. *)
-      !cur.root.right <- Some head;
-      head.left <- Some !cur.root;
-      cur := { root = head; nodes = []; items; options }
+      !cur.right <- Some head;
+      head.left <- Some !cur;
+      cur := head
     ) else (
       let new_node : node =
-        make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur.root ()
+        make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur ()
       in
-      !cur.root.right <- Some new_node;
+      !cur.right <- Some new_node;
       new_node.up <- Some new_node;
       new_node.down <- Some new_node;
-      cur := { root = new_node; nodes = []; items; options }
+      cur := new_node
     )
   done;
   (* Set up first spacer node *)
@@ -150,7 +150,7 @@ let mk ~(items : string list) ~(options : string list list) : t =
   for n = 1 to num_options do
     let k = CCArray.length !cur_opt in
     for j = 0 to k - 1 do
-      let nodej = find ~name:!cur_opt.(j) !cur in
+      let nodej = find ~name:!cur_opt.(j) ~items !cur in
       nodej.len <- CCOption.map (fun x -> x + 1) nodej.len;
       let q = CCOption.get_exn_or "no up node" nodej.up in
       new_node := make_node ~id:(!spacer_node.id + j + 1) ~top:nodej.id ();
@@ -178,14 +178,14 @@ let mk ~(items : string list) ~(options : string list list) : t =
       cur_opt := optarray.(n)
   done;
   (* Collect all nodes *)
-  let header_node = ref (right !cur.root) in
+  let header_node = ref (right !cur) in
   for _ = 0 to num_items do
     node_list := !node_list @ [ !header_node ];
     header_node := right !header_node
   done;
-  let lrroot = ref (right !cur.root) in
+  let lrroot = ref (right !cur) in
   let udroot = ref (up !lrroot) in
-  while !lrroot.id != !cur.root.id do
+  while !lrroot.id != !cur.id do
     while !udroot.id != !lrroot.id do
       node_list := !node_list @ [ !udroot ];
       udroot := up !udroot
@@ -193,4 +193,4 @@ let mk ~(items : string list) ~(options : string list list) : t =
     lrroot := right !lrroot;
     udroot := up !lrroot
   done;
-  { !cur with nodes = !node_list }
+  { root = !cur; nodes = !node_list; items; options }

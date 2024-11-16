@@ -12,7 +12,7 @@ let () =
   in
   let cur = Dlx.Algox.mk ~items ~options in
 
-  let node_of = Dlx.Algox.find ~name:"c" cur in
+  let node_of = Dlx.Algox.find ~name:"c" ~items cur.root in
   CCFormat.printf "@.Name: %a, id: %d@."
     CCFormat.(some string)
     node_of.name node_of.id
