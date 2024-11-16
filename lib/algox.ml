@@ -10,14 +10,6 @@ type node = {
 }
 [@@deriving make]
 
-let id node = node.id
-
-let top node =
-  CCOption.get_exn_or "No node to the right of this node!"
-    CCOption.(
-      let* top = node.top in
-      pure top)
-
 let left node =
   CCOption.get_exn_or "No node to the left of this node!" node.left
 
@@ -38,10 +30,16 @@ let box node =
   let name = option_string_of C.string node.name in
   let len = option_string_of C.int node.len in
 
-  let up_id = (up node).id in
-  let down_id = (down node).id in
-  let left_id = (left node).id in
-  let right_id = (right node).id in
+  let up_id = option_string_of C.int (CCOption.map (fun x -> x.id) node.up) in
+  let down_id =
+    option_string_of C.int (CCOption.map (fun x -> x.id) node.down)
+  in
+  let left_id =
+    option_string_of C.int (CCOption.map (fun x -> x.id) node.left)
+  in
+  let right_id =
+    option_string_of C.int (CCOption.map (fun x -> x.id) node.right)
+  in
   B.(
     frame
     @@ vlist
@@ -50,10 +48,10 @@ let box node =
            hlist [ text ("TOP:" ^ top); text name; text ("LEN:" ^ len) ];
            hlist
              [
-               vlist [ text "U"; int up_id ];
-               vlist [ text "D"; int down_id ];
-               vlist [ text "L"; int left_id ];
-               vlist [ text "R"; int right_id ];
+               vlist [ text "U"; text up_id ];
+               vlist [ text "D"; text down_id ];
+               vlist [ text "L"; text left_id ];
+               vlist [ text "R"; text right_id ];
              ];
          ])
 
@@ -62,6 +60,7 @@ let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
 type t = {
   mutable root: node;
   items: string list;
+  options: string list list;
 }
 
 let pp fpf t =
@@ -100,7 +99,7 @@ let find ~name t =
   done;
   CCOption.get_exn_or "Could not find id with that name." !ans
 
-let init ~items () =
+let init ~items ~options () =
   let rec node =
     {
       id = 0;
@@ -113,14 +112,15 @@ let init ~items () =
       right = Some node;
     }
   in
-  { root = node; items }
+  { root = node; items; options }
 
-let mk ~(items : string list) ~(_options : string list list) : t =
+let mk ~(items : string list) ~(options : string list list) : t =
   let itarray = CCArray.of_list items in
-  let optarray = CCArray.map CCArray.of_list (CCArray.of_list _options) in
+  let optarray = CCArray.map CCArray.of_list (CCArray.of_list options) in
   let num_items = CCArray.length itarray in
   let num_options = CCArray.length optarray in
-  let cur = ref (init ~items ()) in
+  let node_list = ref [] in
+  let cur = ref (init ~items ~options ()) in
   (* Immutable bindings FTW!*)
   let head = !cur.root in
   (* Process items *)
@@ -129,7 +129,7 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       (* Create a circular linked list on top. *)
       !cur.root.right <- Some head;
       head.left <- Some !cur.root;
-      cur := { root = head; items }
+      cur := { root = head; items; options }
     ) else (
       let new_node : node =
         make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur.root ()
@@ -137,7 +137,7 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       !cur.root.right <- Some new_node;
       new_node.up <- Some new_node;
       new_node.down <- Some new_node;
-      cur := { root = new_node; items }
+      cur := { root = new_node; items; options }
     )
   done;
   (* Set up first spacer node *)
@@ -164,6 +164,7 @@ let mk ~(items : string list) ~(_options : string list list) : t =
       if j = k - 1 then (
         m := !m + 1;
         !spacer_node.down <- Some !new_node;
+        node_list := !node_list @ [ !spacer_node ];
         spacer_node := make_node ~id:(!new_node.id + 1) ~top:(-1 * !m) ();
         !spacer_node.up <- Some !first_node
       ) else
@@ -171,8 +172,27 @@ let mk ~(items : string list) ~(_options : string list list) : t =
     done;
 
     if n = num_options then
-      ()
+      node_list := !node_list @ [ !spacer_node ]
     else
       cur_opt := optarray.(n)
   done;
+  (* Collect all nodes *)
+  let header_node = ref (right !cur.root) in
+  for _ = 0 to num_items do
+    node_list := !node_list @ [ !header_node ];
+    header_node := right !header_node
+  done;
+  let lrroot = ref (right !cur.root) in
+  let udroot = ref (up !lrroot) in
+  while !lrroot.id != !cur.root.id do
+    while !udroot.id != !lrroot.id do
+      node_list := !node_list @ [ !udroot ];
+      udroot := up !udroot
+    done;
+    lrroot := right !lrroot;
+    udroot := up !lrroot
+  done;
+  CCFormat.printf "%a@."
+    CCFormat.(list pp_node)
+    (CCList.sort (fun n1 n2 -> compare n1.id n2.id) !node_list);
   !cur

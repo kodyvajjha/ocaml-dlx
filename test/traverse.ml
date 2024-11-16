@@ -10,7 +10,7 @@ let () =
       [ "d"; "e"; "g" ];
     ]
   in
-  let cur = Dlx.Algox.mk ~items ~_options:options in
+  let cur = Dlx.Algox.mk ~items ~options in
 
   let node_of = Dlx.Algox.find ~name:"c" cur in
   CCFormat.printf "@.Name: %a, id: %d@."

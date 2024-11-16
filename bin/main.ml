@@ -41,7 +41,7 @@ let () =
       [ "d"; "e"; "g" ];
     ]
   in
-  let cur = Dlx.Algox.mk ~items ~_options:options in
+  let cur = Dlx.Algox.mk ~items ~options in
   CCFormat.printf "%a" Dlx.Algox.pp cur
 (*
      let node_of = Dlx.Algox.find ~name:"c" cur in
