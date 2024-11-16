@@ -50,10 +50,10 @@ let box node =
            hlist [ text ("TOP:" ^ top); text name; text ("LEN:" ^ len) ];
            hlist
              [
-               vlist [ text "U:"; int up_id ];
-               vlist [ text "D:"; int down_id ];
-               vlist [ text "L:"; int left_id ];
-               vlist [ text "R:"; int right_id ];
+               vlist [ text "U"; int up_id ];
+               vlist [ text "D"; int down_id ];
+               vlist [ text "L"; int left_id ];
+               vlist [ text "R"; int right_id ];
              ];
          ])
 
