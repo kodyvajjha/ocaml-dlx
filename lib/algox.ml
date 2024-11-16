@@ -58,7 +58,8 @@ let box node =
 let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
 
 type t = {
-  mutable root: node;
+  root: node;
+  nodes: node list;
   items: string list;
   options: string list list;
 }
@@ -112,7 +113,7 @@ let init ~items ~options () =
       right = Some node;
     }
   in
-  { root = node; items; options }
+  { root = node; nodes = []; items; options }
 
 let mk ~(items : string list) ~(options : string list list) : t =
   let itarray = CCArray.of_list items in
@@ -129,7 +130,7 @@ let mk ~(items : string list) ~(options : string list list) : t =
       (* Create a circular linked list on top. *)
       !cur.root.right <- Some head;
       head.left <- Some !cur.root;
-      cur := { root = head; items; options }
+      cur := { root = head; nodes = []; items; options }
     ) else (
       let new_node : node =
         make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur.root ()
@@ -137,7 +138,7 @@ let mk ~(items : string list) ~(options : string list list) : t =
       !cur.root.right <- Some new_node;
       new_node.up <- Some new_node;
       new_node.down <- Some new_node;
-      cur := { root = new_node; items; options }
+      cur := { root = new_node; nodes = []; items; options }
     )
   done;
   (* Set up first spacer node *)
@@ -192,7 +193,4 @@ let mk ~(items : string list) ~(options : string list list) : t =
     lrroot := right !lrroot;
     udroot := up !lrroot
   done;
-  CCFormat.printf "%a@."
-    CCFormat.(list pp_node)
-    (CCList.sort (fun n1 n2 -> compare n1.id n2.id) !node_list);
-  !cur
+  { !cur with nodes = !node_list }

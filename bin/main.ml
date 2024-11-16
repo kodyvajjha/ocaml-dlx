@@ -42,7 +42,12 @@ let () =
     ]
   in
   let cur = Dlx.Algox.mk ~items ~options in
-  CCFormat.printf "%a" Dlx.Algox.pp cur
+  CCFormat.printf "%a" Dlx.Algox.pp cur;
+  CCFormat.printf "%a@."
+    CCFormat.(list Dlx.Algox.pp_node)
+    (CCList.sort
+       (fun (n1 : Dlx.Algox.node) n2 -> compare n1.id n2.id)
+       cur.nodes)
 (*
      let node_of = Dlx.Algox.find ~name:"c" cur in
      CCFormat.printf "@.Name: %a, id: %d@."
