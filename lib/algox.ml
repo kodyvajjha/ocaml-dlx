@@ -10,11 +10,24 @@ type node = {
 }
 [@@deriving make]
 
+let id node = node.id
+
+let top node =
+  CCOption.get_exn_or "No node to the right of this node!"
+    CCOption.(
+      let* top = node.top in
+      pure top)
+
 let left node =
   CCOption.get_exn_or "No node to the left of this node!" node.left
 
 let right node =
   CCOption.get_exn_or "No node to the right of this node!" node.right
+
+let up node = CCOption.get_exn_or "No node to the up of this node!" node.up
+
+let down node =
+  CCOption.get_exn_or "No node to the down of this node!" node.down
 
 let box node =
   let module B = PrintBox in
@@ -25,12 +38,23 @@ let box node =
   let name = option_string_of C.string node.name in
   let len = option_string_of C.int node.len in
 
+  let up_id = (up node).id in
+  let down_id = (down node).id in
+  let left_id = (left node).id in
+  let right_id = (right node).id in
   B.(
     frame
     @@ vlist
          [
            hlist ~bars:false [ text " "; int id; text " " ];
            hlist [ text ("TOP:" ^ top); text name; text ("LEN:" ^ len) ];
+           hlist
+             [
+               vlist [ text "U:"; int up_id ];
+               vlist [ text "D:"; int down_id ];
+               vlist [ text "L:"; int left_id ];
+               vlist [ text "R:"; int right_id ];
+             ];
          ])
 
 let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
@@ -117,20 +141,35 @@ let mk ~(items : string list) ~(_options : string list list) : t =
     )
   done;
   (* Set up first spacer node *)
-  let spacer_node = ref (make_node ~id:(num_items + 1) ~top:0 ()) in
+  let m = ref 0 in
+  let spacer_node = ref (make_node ~id:(num_items + 1) ~top:!m ()) in
   let cur_opt = ref optarray.(0) in
+  let new_node = ref (make_node ~id:0 ()) in
+  let first_node = ref (make_node ~id:0 ()) in
   for n = 1 to num_options do
     let k = CCArray.length !cur_opt in
     for j = 0 to k - 1 do
       let nodej = find ~name:!cur_opt.(j) !cur in
       nodej.len <- CCOption.map (fun x -> x + 1) nodej.len;
       let q = CCOption.get_exn_or "no up node" nodej.up in
-      let new_node = make_node ~id:(!spacer_node.id + j) ~top:nodej.id () in
-      new_node.up <- Some q;
-      q.down <- Some new_node;
-      new_node.down <- Some nodej;
-      nodej.up <- Some new_node
+      new_node := make_node ~id:(!spacer_node.id + j + 1) ~top:nodej.id ();
+      !new_node.up <- Some q;
+      q.down <- Some !new_node;
+      !new_node.down <- Some nodej;
+      nodej.up <- Some !new_node;
+      if j = 0 then
+        first_node := !new_node
+      else
+        ();
+      if j = k - 1 then (
+        m := !m + 1;
+        !spacer_node.down <- Some !new_node;
+        spacer_node := make_node ~id:(!new_node.id + 1) ~top:(-1 * !m) ();
+        !spacer_node.up <- Some !first_node
+      ) else
+        ()
     done;
+
     if n = num_options then
       ()
     else
