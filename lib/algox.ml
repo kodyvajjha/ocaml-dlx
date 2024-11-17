@@ -64,7 +64,7 @@ type t = {
   options: string list list;
 }
 
-(** Get the row and column of the node in question. Used mainly for printing. *)
+(** Get the row and column of sparse matrix representing the node in question. Used mainly for printing. *)
 let rowcol t node =
   let node_array = CCArray.of_list t.nodes in
   let col =
@@ -96,7 +96,6 @@ let pp fpf t =
   let node_array = CCArray.of_list t.nodes in
   let rc_array = CCArray.map (rowcol t) node_array in
   let num_nodes = CCArray.length node_array in
-  CCFormat.printf "num_nodes : %d@." num_nodes;
   let main_box =
     let module B = PrintBox in
     let arr = CCArray.make_matrix (num_options + 1) (num_items + 2) B.empty in
@@ -108,7 +107,6 @@ let pp fpf t =
     done;
     (* Print all other non-spacer nodes.*)
     for i = 0 to num_nodes - 1 do
-      CCFormat.printf "(%d,(%d,%d))@." i (fst rc_array.(i)) (snd rc_array.(i));
       let row, col = rc_array.(i) in
       match node_array.(i).top with
       | Some m -> if m > 0 then arr.(row).(col) <- box node_array.(i)
@@ -188,18 +186,14 @@ let mk ~(items : string list) ~(options : string list list) : t =
       q.down <- Some !new_node;
       !new_node.down <- Some nodej;
       nodej.up <- Some !new_node;
-      if j = 0 then
-        first_node := !new_node
-      else
-        ();
+      if j = 0 then first_node := !new_node;
       if j = k - 1 then (
         m := !m + 1;
         !spacer_node.down <- Some !new_node;
         node_list := !node_list @ [ !spacer_node ];
         spacer_node := make_node ~id:(!new_node.id + 1) ~top:(-1 * !m) ();
         !spacer_node.up <- Some !first_node
-      ) else
-        ()
+      )
     done;
 
     if n = num_options then
