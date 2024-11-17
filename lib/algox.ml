@@ -116,7 +116,7 @@ let pp fpf t =
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
-let find ~name ~items root =
+let find_header_node ~name ~items root =
   let num_items = CCList.length items in
   let cur = ref root in
   let ans = ref None in
@@ -178,7 +178,7 @@ let mk ~(items : string list) ~(options : string list list) : t =
   for n = 1 to num_options do
     let k = CCArray.length !cur_opt in
     for j = 0 to k - 1 do
-      let nodej = find ~name:!cur_opt.(j) ~items !cur in
+      let nodej = find_header_node ~name:!cur_opt.(j) ~items !cur in
       nodej.len <- CCOption.map (fun x -> x + 1) nodej.len;
       let q = CCOption.get_exn_or "no up node" nodej.up in
       new_node := make_node ~id:(!spacer_node.id + j + 1) ~top:nodej.id ();
