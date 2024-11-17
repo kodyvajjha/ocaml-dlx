@@ -64,36 +64,39 @@ type t = {
   options: string list list;
 }
 
-let pp fpf t =
-  let module C = CCFormat in
-  let num_items = CCList.length t.items in
-  let _option_string_of pp = C.(to_string (some pp)) in
-  let main_box =
-    let module B = PrintBox in
-    let arr = CCArray.make (num_items + 1) B.empty in
-    let root_node = ref t.root in
-    for i = 0 to num_items do
-      arr.(i) <- box !root_node;
-      (* B.sprintf "(%d,%s)" !root_node.id
-         (_option_string_of C.string !root_node.name); *)
-      root_node := right !root_node
-    done;
-    CCArray.init (num_items + 1) (fun row ->
-        Array.init (num_items + 1) (fun col ->
-            if row > 0 then
-              B.empty
-            else
-              arr.(col)))
-    |> B.grid |> B.frame
-  in
-  CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
+(* let pp fpf t =
+   let module C = CCFormat in
+   let num_items = CCList.length t.items in
+   let _option_string_of pp = C.(to_string (some pp)) in
+   let main_box =
+     let module B = PrintBox in
+     let arr = CCArray.make (num_items + 1) B.empty in
+     let root_node = ref t.root in
+     for i = 0 to num_items do
+       arr.(i) <- box !root_node;
+       (* B.sprintf "(%d,%s)" !root_node.id
+          (_option_string_of C.string !root_node.name); *)
+       root_node := right !root_node
+     done;
+     CCArray.init (num_items + 1) (fun row ->
+         Array.init (num_items + 1) (fun col ->
+             if row > 0 then
+               B.empty
+             else
+               arr.(col)))
+     |> B.grid |> B.frame
+   in
+   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box *)
 
-let rowcol node t =
+let rowcol t node =
   let node_array = CCArray.of_list t.nodes in
-
   let col =
     match node.top with
-    | Some i -> i
+    | Some i ->
+      if i <= 0 then
+        0
+      else
+        i - 1
     | None -> 0
   in
   let rec find_right idx =
@@ -102,34 +105,33 @@ let rowcol node t =
     | Some i ->
       if i <= 0 then
         -1 * i
-      else (
-        print_int idx;
+      else
         find_right (idx + 1)
-      )
   in
   (* Find the index of the target node *)
   let row = find_right node.id in
   row, col
 
-(* let pp fpf t =
-   let module C = CCFormat in
-   let num_items = CCList.length t.items in
-   let num_options = CCList.length t.options in
-   let node_array = CCArray.of_list t.nodes in
-   let _num_nodes = CCArray.length node_array in
-   let main_box =
-     let module B = PrintBox in
-     let arr = CCArray.make_matrix (num_items + 2) (num_options + 1) B.empty in
-     let root_node = ref t.root in
-     for col = 0 to num_items + 2 do
-       for row = 0 to num_options + 1 do
-         arr.(row).(col) <- box !root_node;
-         root_node := right !root_node
-       done
-     done;
-     arr |> B.grid |> B.frame
-   in
-   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box *)
+let pp fpf t =
+  let module C = CCFormat in
+  let num_items = CCList.length t.items in
+  let num_options = CCList.length t.options in
+  let node_array = CCArray.of_list t.nodes in
+  let rc_array = CCArray.map (rowcol t) node_array in
+  (* CCFormat.printf "(%a)@." (CCArray.pp CCFormat.(pair int int)) rc_array; *)
+  let num_nodes = CCArray.length node_array in
+  let main_box =
+    let module B = PrintBox in
+    let arr = CCArray.make_matrix (num_items + 2) (num_options + 1) B.empty in
+    (* let root_node = ref t.root in *)
+    for i = 0 to num_nodes - 1 do
+      CCFormat.printf "(%d,(%d,%d))@." i (fst rc_array.(i)) (snd rc_array.(i));
+      let row, col = rc_array.(i) in
+      if col != 0 then arr.(row).(col) <- box node_array.(i)
+    done;
+    arr |> B.grid |> B.frame
+  in
+  CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
 let find ~name ~items root =
   let num_items = CCList.length items in
@@ -236,4 +238,5 @@ let mk ~(items : string list) ~(options : string list list) : t =
     lrroot := right !lrroot;
     udroot := up !lrroot
   done;
+  node_list := CCList.sort (fun n1 n2 -> compare n1.id n2.id) !node_list;
   { root = !cur; nodes = !node_list; items; options }
