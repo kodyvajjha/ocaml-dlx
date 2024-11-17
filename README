@@ -1,5 +1,0 @@
-# DLX in OCaml
-
-This is a WIP OCaml implementation of Algorithm X which solves the exact cover problem using dancing links. 
-
-Currently we only have finished step X1 of his algorithm, which corresponds to setting up the problem in memory using a weird toroidal data structure. This data structure has a horizonal doubly linked list on the top row and vertical circular doubly linked lists going through each element on the top row.
