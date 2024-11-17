@@ -1,7 +1,7 @@
 type node = {
   id: int;
   top: int option; (* Spacer nodes have non-positive top values *)
-  mutable name: string option; (* Spacer nodes and root nodes have no name.*)
+  name: string option; (* Spacer nodes and root nodes have no name.*)
   mutable len: int option; (* Only header nodes have length. *)
   mutable up: node option;
   mutable down: node option;
@@ -87,6 +87,49 @@ let pp fpf t =
     |> B.grid |> B.frame
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
+
+let rowcol node t =
+  let node_array = CCArray.of_list t.nodes in
+
+  let col =
+    match node.top with
+    | Some i -> i
+    | None -> 0
+  in
+  let rec find_right idx =
+    match node_array.(idx).top with
+    | None -> 0
+    | Some i ->
+      if i <= 0 then
+        -1 * i
+      else (
+        print_int idx;
+        find_right (idx + 1)
+      )
+  in
+  (* Find the index of the target node *)
+  let row = find_right node.id in
+  row, col
+
+(* let pp fpf t =
+   let module C = CCFormat in
+   let num_items = CCList.length t.items in
+   let num_options = CCList.length t.options in
+   let node_array = CCArray.of_list t.nodes in
+   let _num_nodes = CCArray.length node_array in
+   let main_box =
+     let module B = PrintBox in
+     let arr = CCArray.make_matrix (num_items + 2) (num_options + 1) B.empty in
+     let root_node = ref t.root in
+     for col = 0 to num_items + 2 do
+       for row = 0 to num_options + 1 do
+         arr.(row).(col) <- box !root_node;
+         root_node := right !root_node
+       done
+     done;
+     arr |> B.grid |> B.frame
+   in
+   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box *)
 
 let find ~name ~items root =
   let num_items = CCList.length items in
