@@ -1,7 +1,7 @@
 type node = {
-  id: int;
-  top: int option; (* Spacer nodes have non-positive top values *)
   name: string option; (* Spacer nodes and root nodes have no name.*)
+  mutable id: int;
+  mutable top: int option; (* Spacer nodes have non-positive top values *)
   mutable len: int option; (* Only header nodes have length. *)
   mutable up: node option;
   mutable down: node option;
@@ -63,6 +63,9 @@ type t = {
   items: string list;
   options: string list list;
 }
+
+(** Get the node with specified id. *)
+let get ~id t = CCList.nth t.nodes id
 
 (** Get the row and column of sparse matrix representing the node in question. Used mainly for printing. *)
 let rowcol t node =
@@ -219,3 +222,25 @@ let mk ~(items : string list) ~(options : string list list) : t =
   done;
   node_list := CCList.sort (fun n1 n2 -> compare n1.id n2.id) !node_list;
   { root = !cur; nodes = !node_list; items; options }
+
+let hide (p : int) t =
+  let qnode = ref (get ~id:(p + 1) t) in
+  while !qnode.id != p do
+    let x = !qnode.top in
+    let u = up !qnode in
+    let d = down !qnode in
+    match x with
+    | None -> failwith "Trying to hide header node!"
+    | Some id ->
+      let topnode = get ~id t in
+      if id <= 0 then
+        (* qnode was a spacer node *)
+        qnode := CCOption.get_exn_or "No upper node!" !qnode.up
+      else (
+        u.down <- Some d;
+        d.up <- Some u;
+        topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
+        !qnode.id <- !qnode.id + 1
+      )
+  done;
+  t
