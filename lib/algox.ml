@@ -225,22 +225,23 @@ let mk ~(items : string list) ~(options : string list list) : t =
 
 let hide (p : int) t =
   let qnode = ref (get ~id:(p + 1) t) in
+  CCFormat.printf "%a@." pp_node !qnode;
   while !qnode.id != p do
     let x = !qnode.top in
     let u = up !qnode in
     let d = down !qnode in
     match x with
-    | None -> failwith "Trying to hide header node!"
+    | None -> failwith "Trying to hide node with no top!"
     | Some id ->
-      let topnode = get ~id t in
       if id <= 0 then
         (* qnode was a spacer node *)
         qnode := CCOption.get_exn_or "No upper node!" !qnode.up
       else (
+        let topnode = get ~id t in
         u.down <- Some d;
         d.up <- Some u;
         topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
-        !qnode.id <- !qnode.id + 1
+        qnode := get ~id:(!qnode.id + 1) t
       )
   done;
   t
