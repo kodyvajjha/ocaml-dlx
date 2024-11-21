@@ -15,4 +15,5 @@ let () =
   let node_of = Dlx.Algox.find_header_node ~name:"c" ~items cur.root in
   CCFormat.printf "@.Name: %a, id: %d@."
     CCFormat.(some string)
-    node_of.name node_of.id
+    node_of.name node_of.id;
+  CCFormat.printf "@.%a" Dlx.Algox.pp_node cur.nodes.(10)
