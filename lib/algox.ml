@@ -59,13 +59,10 @@ let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
 
 type t = {
   root: node;
-  mutable nodes: node array;
+  nodes: node array;
   items: string list;
   options: string list list;
 }
-
-(** Get the node with specified id. *)
-let get ~id t = t.nodes.(id)
 
 (** Get the row and column of sparse matrix representing the node in question. Used mainly for printing. *)
 let rowcol t node =
@@ -225,31 +222,8 @@ let mk ~(items : string list) ~(options : string list list) : t =
   { root = !cur; nodes; items; options }
 
 (* let hide (p : int) t =
-   let id = ref (p + 1) in
-   let qnode = t.nodes.(!id) in
-   while qnode.id != p do
-     let x = qnode.top in
-     let u = up qnode in
-     let d = down qnode in
-     match x with
-     | None -> failwith "Trying to hide node with no top!"
-     | Some i ->
-       if i <= 0 then
-         (* qnode was a spacer node *)
-         t.nodes.(!id) <- CCOption.get_exn_or "No upper node!" qnode.up
-       else (
-         let topnode = t.nodes.(i) in
-         u.down <- Some d;
-         d.up <- Some u;
-         topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
-         t.nodes.(!id) <- t.nodes.(qnode.id + 1)
-       )
-   done;
-   t *)
-
-(* let hide (p : int) t =
-   let qnode = ref (get ~id:(p + 1) t) in
-   CCFormat.printf "%a@." pp_node !qnode;
+   let qnode = ref t.nodes.(p + 1) in
+   (* CCFormat.printf "%a@." pp_node !qnode; *)
    while !qnode.id != p do
      let x = !qnode.top in
      let u = up !qnode in
@@ -259,13 +233,45 @@ let mk ~(items : string list) ~(options : string list list) : t =
      | Some id ->
        if id <= 0 then
          (* qnode was a spacer node *)
-         qnode := CCOption.get_exn_or "No upper node!" !qnode.up
+         qnode := u
        else (
-         let topnode = get ~id t in
+         let topnode = t.nodes.(id) in
          u.down <- Some d;
          d.up <- Some u;
          topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
-         qnode := get ~id:(!qnode.id + 1) t
+         qnode := t.nodes.(!qnode.id + 1)
        )
    done;
    t *)
+
+let hide (p : int) t =
+  let qnode = ref t.nodes.(p + 1) in
+  CCFormat.printf "@.STEP 1: %a@." pp_node !qnode;
+  while !qnode.id != p do
+    let x = !qnode.top in
+    let u = up !qnode in
+    let d = down !qnode in
+    CCFormat.printf "@.STEP 2: [x:%a;u:%d;d:%d]@."
+      CCFormat.(some int)
+      x u.id d.id;
+    match x with
+    | None -> failwith "Trying to hide node with no top!"
+    | Some id ->
+      if id <= 0 then (
+        (* qnode was a spacer node *)
+        let qid = !qnode.id in
+        qnode := u;
+        t.nodes.(qid) <- u
+      ) else (
+        let topnode = t.nodes.(id) in
+        CCFormat.printf "Topnode: %a@." pp_node topnode;
+        topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
+        u.down <- Some d;
+        d.up <- Some u;
+        t.nodes.(u.id) <- u;
+        t.nodes.(d.id) <- d;
+        t.nodes.(id) <- topnode;
+        qnode := t.nodes.(!qnode.id + 1)
+      )
+  done;
+  t
