@@ -44,5 +44,5 @@ let () =
   let cur1 = Dlx.Algox.mk ~items ~options in
   (* CCFormat.printf "%a@." Dlx.Algox.pp_node (Dlx.Algox.get ~id:15 cur1) *)
   CCFormat.printf "%a" Dlx.Algox.pp cur1;
-  let cur2 = Dlx.Algox.hide 13 cur1 in
+  let cur2 = Dlx.Algox.hide 19 cur1 in
   CCFormat.printf "@.%a" Dlx.Algox.pp cur2

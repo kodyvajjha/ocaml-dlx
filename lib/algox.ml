@@ -57,6 +57,8 @@ let box node =
 
 let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
 
+let show_node node = CCFormat.printf "%a" pp_node node
+
 type t = {
   root: node;
   nodes: node array;
@@ -221,56 +223,25 @@ let mk ~(items : string list) ~(options : string list list) : t =
   CCArray.sort (fun n1 n2 -> compare n1.id n2.id) nodes;
   { root = !cur; nodes; items; options }
 
-(* let hide (p : int) t =
-   let qnode = ref t.nodes.(p + 1) in
-   (* CCFormat.printf "%a@." pp_node !qnode; *)
-   while !qnode.id != p do
-     let x = !qnode.top in
-     let u = up !qnode in
-     let d = down !qnode in
-     match x with
-     | None -> failwith "Trying to hide node with no top!"
-     | Some id ->
-       if id <= 0 then
-         (* qnode was a spacer node *)
-         qnode := u
-       else (
-         let topnode = t.nodes.(id) in
-         u.down <- Some d;
-         d.up <- Some u;
-         topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
-         qnode := t.nodes.(!qnode.id + 1)
-       )
-   done;
-   t *)
-
-let hide (p : int) t =
+let hide (p : int) (t : t) =
   let qnode = ref t.nodes.(p + 1) in
-  CCFormat.printf "@.STEP 1: %a@." pp_node !qnode;
   while !qnode.id != p do
-    let x = !qnode.top in
+    show_node !qnode;
     let u = up !qnode in
     let d = down !qnode in
-    CCFormat.printf "@.STEP 2: [x:%a;u:%d;d:%d]@."
-      CCFormat.(some int)
-      x u.id d.id;
-    match x with
-    | None -> failwith "Trying to hide node with no top!"
+    match !qnode.top with
+    | None -> failwith "wtf??"
     | Some id ->
       if id <= 0 then (
-        (* qnode was a spacer node *)
-        let qid = !qnode.id in
-        qnode := u;
-        t.nodes.(qid) <- u
+        qnode := up !qnode;
+        CCFormat.printf "@.(qnode.id,p) = (%d,%d)" !qnode.id p
       ) else (
-        let topnode = t.nodes.(id) in
-        CCFormat.printf "Topnode: %a@." pp_node topnode;
-        topnode.len <- CCOption.map (fun x -> x - 1) topnode.len;
+        t.nodes.(id).len <- CCOption.map (fun x -> x - 1) t.nodes.(id).len;
         u.down <- Some d;
         d.up <- Some u;
         t.nodes.(u.id) <- u;
         t.nodes.(d.id) <- d;
-        t.nodes.(id) <- topnode;
+        t.nodes.(id) <- t.nodes.(id);
         qnode := t.nodes.(!qnode.id + 1)
       )
   done;
