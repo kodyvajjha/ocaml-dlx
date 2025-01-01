@@ -16,4 +16,4 @@ let () =
   CCFormat.printf "@.Name: %a, id: %d@."
     CCFormat.(some string)
     node_of.name node_of.id;
-  CCFormat.printf "@.%a" Dlx.Algox.pp_node cur.nodes.(10)
+  CCFormat.printf "@.%a" Dlx.Node.pp_node cur.nodes.(10)

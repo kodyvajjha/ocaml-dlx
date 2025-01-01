@@ -1,73 +1,13 @@
-type node = {
-  name: string option; (* Spacer nodes and root nodes have no name.*)
-  mutable id: int;
-  mutable top: int option; (* Spacer nodes have non-positive top values *)
-  mutable len: int option; (* Only header nodes have length. *)
-  mutable up: node option;
-  mutable down: node option;
-  mutable left: node option; (* Non-header nodes are not linked left/right*)
-  mutable right: node option; (* Non-header nodes are not linked left/right*)
-}
-[@@deriving make]
-
-let left node =
-  CCOption.get_exn_or "No node to the left of this node!" node.left
-
-let right node =
-  CCOption.get_exn_or "No node to the right of this node!" node.right
-
-let up node = CCOption.get_exn_or "No node to the up of this node!" node.up
-
-let down node =
-  CCOption.get_exn_or "No node to the down of this node!" node.down
-
-let box node =
-  let module B = PrintBox in
-  let module C = CCFormat in
-  let option_string_of pp = C.(to_string (some pp)) in
-  let id = node.id in
-  let top = option_string_of C.int node.top in
-  let name = option_string_of C.string node.name in
-  let len = option_string_of C.int node.len in
-
-  let up_id = option_string_of C.int (CCOption.map (fun x -> x.id) node.up) in
-  let down_id =
-    option_string_of C.int (CCOption.map (fun x -> x.id) node.down)
-  in
-  let left_id =
-    option_string_of C.int (CCOption.map (fun x -> x.id) node.left)
-  in
-  let right_id =
-    option_string_of C.int (CCOption.map (fun x -> x.id) node.right)
-  in
-  B.(
-    frame
-    @@ vlist
-         [
-           hlist ~bars:false [ text " "; int id; text " " ];
-           hlist [ text ("TOP:" ^ top); text name; text ("LEN:" ^ len) ];
-           hlist
-             [
-               vlist [ text "U"; text up_id ];
-               vlist [ text "D"; text down_id ];
-               vlist [ text "L"; text left_id ];
-               vlist [ text "R"; text right_id ];
-             ];
-         ])
-
-let pp_node fpf node = CCFormat.fprintf fpf "%a" PrintBox_text.pp (box node)
-
-let show_node node = CCFormat.printf "%a" pp_node node
-
 type t = {
-  root: node;
-  nodes: node array;
+  root: Node.t;
+  nodes: Node.t array;
   items: string list;
   options: string list list;
 }
 
 (** Get the row and column of sparse matrix representing the node in question. Used mainly for printing. *)
 let rowcol t node =
+  let open Node in
   let node_array = t.nodes in
   let col =
     match node.top with
@@ -92,6 +32,7 @@ let rowcol t node =
   row, col
 
 let pp fpf t =
+  let open Node in
   let module C = CCFormat in
   let num_items = CCList.length t.items in
   let num_options = CCList.length t.options in
@@ -119,6 +60,7 @@ let pp fpf t =
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
 let find_header_node ~name ~items root =
+  let open Node in
   let num_items = CCList.length items in
   let cur = ref root in
   let ans = ref None in
@@ -130,28 +72,13 @@ let find_header_node ~name ~items root =
   done;
   CCOption.get_exn_or "Could not find id with that name." !ans
 
-let init () =
-  let rec node =
-    {
-      id = 0;
-      top = None;
-      name = Some "HEAD";
-      len = None;
-      up = Some node;
-      down = Some node;
-      left = Some node;
-      right = Some node;
-    }
-  in
-  node
-
 let mk ~(items : string list) ~(options : string list list) : t =
   let itarray = CCArray.of_list items in
   let optarray = CCArray.map CCArray.of_list (CCArray.of_list options) in
   let num_items = CCArray.length itarray in
   let num_options = CCArray.length optarray in
   let node_list = ref [] in
-  let cur = ref (init ()) in
+  let cur = ref (Node.init ()) in
   (* Immutable bindings FTW!*)
   let head = !cur in
   (* Process items *)
@@ -162,8 +89,8 @@ let mk ~(items : string list) ~(options : string list list) : t =
       head.left <- Some !cur;
       cur := head
     ) else (
-      let new_node : node =
-        make_node ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur ()
+      let new_node : Node.t =
+        Node.make ~id:i ~name:itarray.(i - 1) ~len:0 ~left:!cur ()
       in
       !cur.right <- Some new_node;
       new_node.up <- Some new_node;
@@ -173,17 +100,17 @@ let mk ~(items : string list) ~(options : string list list) : t =
   done;
   (* Set up first spacer node *)
   let m = ref 0 in
-  let spacer_node = ref (make_node ~id:(num_items + 1) ~top:!m ()) in
+  let spacer_node = ref (Node.make ~id:(num_items + 1) ~top:!m ()) in
   let cur_opt = ref optarray.(0) in
-  let new_node = ref (make_node ~id:0 ()) in
-  let first_node = ref (make_node ~id:0 ()) in
+  let new_node = ref (Node.make ~id:0 ()) in
+  let first_node = ref (Node.make ~id:0 ()) in
   for n = 1 to num_options do
     let k = CCArray.length !cur_opt in
     for j = 0 to k - 1 do
       let nodej = find_header_node ~name:!cur_opt.(j) ~items !cur in
       nodej.len <- CCOption.map (fun x -> x + 1) nodej.len;
       let q = CCOption.get_exn_or "no up node" nodej.up in
-      new_node := make_node ~id:(!spacer_node.id + j + 1) ~top:nodej.id ();
+      new_node := Node.make ~id:(!spacer_node.id + j + 1) ~top:nodej.id ();
       !new_node.up <- Some q;
       q.down <- Some !new_node;
       !new_node.down <- Some nodej;
@@ -193,7 +120,7 @@ let mk ~(items : string list) ~(options : string list list) : t =
         m := !m + 1;
         !spacer_node.down <- Some !new_node;
         node_list := !node_list @ [ !spacer_node ];
-        spacer_node := make_node ~id:(!new_node.id + 1) ~top:(-1 * !m) ();
+        spacer_node := Node.make ~id:(!new_node.id + 1) ~top:(-1 * !m) ();
         !spacer_node.up <- Some !first_node
       )
     done;
@@ -203,6 +130,7 @@ let mk ~(items : string list) ~(options : string list list) : t =
     else
       cur_opt := optarray.(n)
   done;
+  let open Node in
   (* Collect all nodes *)
   let header_node = ref (right !cur) in
   for _ = 0 to num_items do
@@ -224,9 +152,10 @@ let mk ~(items : string list) ~(options : string list list) : t =
   { root = !cur; nodes; items; options }
 
 let hide (p : int) (t : t) =
+  let open Node in
   let qnode = ref t.nodes.(p + 1) in
   while !qnode.id != p do
-    show_node !qnode;
+    CCFormat.printf "node id : %d@." !qnode.id;
     let u = up !qnode in
     let d = down !qnode in
     match !qnode.top with
@@ -236,6 +165,7 @@ let hide (p : int) (t : t) =
         qnode := up !qnode;
         CCFormat.printf "@.(qnode.id,p) = (%d,%d)" !qnode.id p
       ) else (
+        show_node !qnode;
         t.nodes.(id).len <- CCOption.map (fun x -> x - 1) t.nodes.(id).len;
         u.down <- Some d;
         d.up <- Some u;
