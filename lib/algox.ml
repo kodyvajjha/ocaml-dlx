@@ -151,28 +151,22 @@ let mk ~(items : string list) ~(options : string list list) : t =
   CCArray.sort (fun n1 n2 -> compare n1.id n2.id) nodes;
   { root = !cur; nodes; items; options }
 
-let hide (p : int) (t : t) =
-  let open Node in
-  let qnode = ref t.nodes.(p + 1) in
-  while !qnode.id != p do
-    CCFormat.printf "node id : %d@." !qnode.id;
-    let u = up !qnode in
-    let d = down !qnode in
-    match !qnode.top with
-    | None -> failwith "wtf??"
-    | Some id ->
-      if id <= 0 then (
-        qnode := up !qnode;
-        CCFormat.printf "@.(qnode.id,p) = (%d,%d)" !qnode.id p
-      ) else (
-        show_node !qnode;
-        t.nodes.(id).len <- CCOption.map (fun x -> x - 1) t.nodes.(id).len;
+let hide p (root : t) =
+  let cur = ref root.nodes.(p + 1) in
+  while !cur.id != p do
+    match !cur.top with
+    | None -> failwith "Option node doesn't have a top node!"
+    | Some i ->
+      if i <= 0 then
+        (* We are at a spacer node.*)
+        cur := CCOption.get_exn_or "This node doesn't have an up!" !cur.up
+      else (
+        let u = Node.up !cur in
+        let d = Node.down !cur in
+        root.nodes.(i).len <- CCOption.map (fun x -> x - 1) root.nodes.(i).len;
         u.down <- Some d;
         d.up <- Some u;
-        t.nodes.(u.id) <- u;
-        t.nodes.(d.id) <- d;
-        t.nodes.(id) <- t.nodes.(id);
-        qnode := t.nodes.(!qnode.id + 1)
+        cur := root.nodes.(!cur.id + 1)
       )
   done;
-  t
+  root
