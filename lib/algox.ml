@@ -169,6 +169,25 @@ let hide p (root : t) =
   done;
   root
 
+let unhide p (root : t) =
+  let cur = ref root.nodes.(p - 1) in
+  while !cur.id != p do
+    match !cur.top with
+    | None -> failwith "Current node does not have a top node!"
+    | Some i ->
+      if i <= 0 then
+        cur := CCOption.get_exn_or "This node doesn't have a down!" !cur.down
+      else (
+        let u = Node.up !cur in
+        let d = Node.down !cur in
+        root.nodes.(i).len <- CCOption.map (fun x -> x + 1) root.nodes.(i).len;
+        u.down <- Some !cur;
+        d.up <- Some !cur;
+        cur := root.nodes.(!cur.id - 1)
+      )
+  done;
+  root
+
 let cover i (root : t) =
   let cur = ref (Node.down root.nodes.(i)) in
   let curroot = ref root in
@@ -180,4 +199,17 @@ let cover i (root : t) =
   let r = Node.right root.nodes.(i) in
   l.right <- Some r;
   r.left <- Some l;
+  root
+
+let uncover i (root : t) =
+  let l = Node.left root.nodes.(i) in
+  let r = Node.right root.nodes.(i) in
+  l.right <- Some root.nodes.(i);
+  r.left <- Some root.nodes.(i);
+  let cur = ref (Node.up root.nodes.(i)) in
+  let curroot = ref root in
+  while !cur.id != i do
+    curroot := unhide !cur.id root;
+    cur := Node.up !cur
+  done;
   root

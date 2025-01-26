@@ -1,5 +1,5 @@
 (library
  (name dlx)
  (public_name dlx)
- (preprocess (pps ppx_deriving.show ppx_deriving.make))
+ (preprocess (pps ppx_deriving.show ppx_deriving.make ppx_deriving.eq))
  (libraries containers printbox printbox-text))
