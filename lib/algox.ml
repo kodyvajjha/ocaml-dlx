@@ -42,11 +42,9 @@ let pp fpf t =
   let main_box =
     let module B = PrintBox in
     let arr = CCArray.make_matrix (num_options + 1) (num_items + 2) B.empty in
-    let root_node = ref t.root in
     (* Print the header node boxes. *)
     for i = 0 to num_items do
-      arr.(0).(i) <- box !root_node;
-      root_node := right !root_node
+      arr.(0).(i) <- box t.nodes.(i)
     done;
     (* Print all other non-spacer nodes.*)
     for i = 0 to num_nodes - 1 do
@@ -169,4 +167,17 @@ let hide p (root : t) =
         cur := root.nodes.(!cur.id + 1)
       )
   done;
+  root
+
+let cover i (root : t) =
+  let cur = ref (Node.down root.nodes.(i)) in
+  let curroot = ref root in
+  while !cur.id != i do
+    curroot := hide !cur.id root;
+    cur := Node.down !cur
+  done;
+  let l = Node.left root.nodes.(i) in
+  let r = Node.right root.nodes.(i) in
+  l.right <- Some r;
+  r.left <- Some l;
   root
