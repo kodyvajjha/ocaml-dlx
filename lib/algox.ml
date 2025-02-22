@@ -149,44 +149,63 @@ let mk ~(items : string list) ~(options : string list list) : t =
   CCArray.sort (fun n1 n2 -> compare n1.id n2.id) nodes;
   { root = !cur; nodes; items; options }
 
-let hide p (root : t) =
-  let cur = ref root.nodes.(p + 1) in
+type dirn =
+  | Left
+  | Right
+
+let step d id =
+  match d with
+  | Left -> id - 1
+  | Right -> id + 1
+
+let traverse_row p (root : t) dir ~by:f =
+  let cur = ref root.nodes.(step dir p) in
+  (*Repeat until we are back were we started. *)
   while !cur.id != p do
     match !cur.top with
-    | None -> failwith "Option node doesn't have a top node!"
+    | None -> failwith "Current node doesn't have a top node!"
     | Some i ->
       if i <= 0 then
         (* We are at a spacer node.*)
-        cur := CCOption.get_exn_or "This node doesn't have an up!" !cur.up
+        cur :=
+          match dir with
+          | Right ->
+            CCOption.get_exn_or "traverse_row: node doesn't have an up!" !cur.up
+          | Left ->
+            CCOption.get_exn_or "traverse_row: node doesn't have an down!"
+              !cur.down
       else (
-        let u = Node.up !cur in
-        let d = Node.down !cur in
-        root.nodes.(i).len <- CCOption.map (fun x -> x - 1) root.nodes.(i).len;
-        u.down <- Some d;
-        d.up <- Some u;
-        cur := root.nodes.(!cur.id + 1)
+        f root !cur;
+        cur := root.nodes.(step dir !cur.id)
       )
   done;
   root
 
+let hide p (root : t) =
+  let unlink root (node : Node.t) =
+    CCOption.iter
+      (fun i ->
+        root.nodes.(i).len <- CCOption.map (fun x -> x - 1) root.nodes.(i).len)
+      node.top;
+    let u = Node.up node in
+    let d = Node.down node in
+    u.down <- Some d;
+    d.up <- Some u
+  in
+  traverse_row p root Right ~by:unlink
+
 let unhide p (root : t) =
-  let cur = ref root.nodes.(p - 1) in
-  while !cur.id != p do
-    match !cur.top with
-    | None -> failwith "Current node does not have a top node!"
-    | Some i ->
-      if i <= 0 then
-        cur := CCOption.get_exn_or "This node doesn't have a down!" !cur.down
-      else (
-        let u = Node.up !cur in
-        let d = Node.down !cur in
-        root.nodes.(i).len <- CCOption.map (fun x -> x + 1) root.nodes.(i).len;
-        u.down <- Some !cur;
-        d.up <- Some !cur;
-        cur := root.nodes.(!cur.id - 1)
-      )
-  done;
-  root
+  let link root (node : Node.t) =
+    CCOption.iter
+      (fun i ->
+        root.nodes.(i).len <- CCOption.map (fun x -> x + 1) root.nodes.(i).len)
+      node.top;
+    let u = Node.up node in
+    let d = Node.down node in
+    u.down <- Some node;
+    d.up <- Some node
+  in
+  traverse_row p root Left ~by:link
 
 let cover i (root : t) =
   let cur = ref (Node.down root.nodes.(i)) in
