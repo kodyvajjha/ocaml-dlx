@@ -175,14 +175,14 @@ let traverse_row p (root : t) dir ~by:f =
             CCOption.get_exn_or "traverse_row: node doesn't have an down!"
               !cur.down
       else (
-        f root !cur;
+        f !cur;
         cur := root.nodes.(step dir !cur.id)
       )
   done;
   root
 
 let hide p (root : t) =
-  let unlink root (node : Node.t) =
+  let unlink (node : Node.t) =
     CCOption.iter
       (fun i ->
         root.nodes.(i).len <- CCOption.map (fun x -> x - 1) root.nodes.(i).len)
@@ -195,7 +195,7 @@ let hide p (root : t) =
   traverse_row p root Right ~by:unlink
 
 let unhide p (root : t) =
-  let link root (node : Node.t) =
+  let link (node : Node.t) =
     CCOption.iter
       (fun i ->
         root.nodes.(i).len <- CCOption.map (fun x -> x + 1) root.nodes.(i).len)
