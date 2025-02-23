@@ -248,18 +248,33 @@ let option_of i (root : t) =
   ignore @@ traverse_row i root Right ~by:collect;
   CCList.rev !ans
 
+let rows_of root i =
+  let cur = ref (Node.down root.nodes.(i)) in
+  let rows = ref [] in
+  while !cur.id != i do
+    rows := !cur :: !rows;
+    cur := Node.down !cur
+  done;
+  CCList.rev !rows
+
 let solve_dlx t =
   let search ~depth =
+    let ans = ref [] in
     (* Check if all items have been covered *)
-    if t.root.right = Some t.root then
+    if t.root.right = Some t.root then (
       (* If all cols are covered, print the solution found. *)
-      CCFormat.printf "Solution found at depth %d!" depth
-    else (
+      CCFormat.printf "Solution found at depth %d!" depth;
+      CCFormat.printf "@.Solution: %a"
+        CCFormat.(list (list string))
+        (CCList.map (fun (node : Node.t) -> option_of node.id t) !ans)
+    ) else (
       (* There are more columns to be covered.Let's choose one. *)
       let cur_col = CCOption.get_exn_or "" t.root.right in
       CCFormat.printf "@.Choosing node %a" Node.pp_node cur_col;
       (* Cover chosen node. *)
-      ignore @@ cover cur_col.id t
+      ignore @@ cover cur_col.id t;
+      let xl = Node.down cur_col in
+      ans := !ans @ [ xl ]
     )
   in
   search ~depth:0;
