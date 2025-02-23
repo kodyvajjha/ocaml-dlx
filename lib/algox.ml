@@ -232,3 +232,35 @@ let uncover i (root : t) =
     cur := Node.up !cur
   done;
   root
+
+let option_of i (root : t) =
+  let cur =
+    CCOption.(root.nodes.(i).top >>= fun topid -> root.nodes.(topid).name)
+  in
+  let ans = ref [ CCOption.value cur ~default:"" ] in
+  let collect (node : Node.t) : unit =
+    let open CCOption in
+    (let* topid = node.top in
+     let+ name = root.nodes.(topid).name in
+     ans := name :: !ans)
+    |> value ~default:()
+  in
+  ignore @@ traverse_row i root Right ~by:collect;
+  CCList.rev !ans
+
+let solve_dlx t =
+  let search ~depth =
+    (* Check if all items have been covered *)
+    if t.root.right = Some t.root then
+      (* If all cols are covered, print the solution found. *)
+      CCFormat.printf "Solution found at depth %d!" depth
+    else (
+      (* There are more columns to be covered.Let's choose one. *)
+      let cur_col = CCOption.get_exn_or "" t.root.right in
+      CCFormat.printf "@.Choosing node %a" Node.pp_node cur_col;
+      (* Cover chosen node. *)
+      ignore @@ cover cur_col.id t
+    )
+  in
+  search ~depth:0;
+  t

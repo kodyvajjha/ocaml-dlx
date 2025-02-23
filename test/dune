@@ -1,3 +1,3 @@
 (tests
- (names traverse printing covering)
+ (names traverse printing covering options)
  (libraries dlx containers printbox printbox-text))
