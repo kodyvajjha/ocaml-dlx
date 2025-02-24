@@ -152,11 +152,14 @@ let mk ~(items : string list) ~(options : string list list) : t =
 type dirn =
   | Left
   | Right
+  | Up
+  | Down
 
 let step d id =
   match d with
   | Left -> id - 1
   | Right -> id + 1
+  | _ -> id
 
 let traverse_row p (root : t) dir ~by:f =
   let cur = ref root.nodes.(step dir p) in
@@ -174,6 +177,10 @@ let traverse_row p (root : t) dir ~by:f =
           | Left ->
             CCOption.get_exn_or "traverse_row: node doesn't have an down!"
               !cur.down
+          | _ ->
+            failwith
+              "traverse_row: can't traverse row in direction other than Left \
+               or Right!"
       else (
         f !cur;
         cur := root.nodes.(step dir !cur.id)
@@ -206,23 +213,32 @@ let unhide p (root : t) =
   in
   traverse_row p root Left ~by:link
 
-let cover i (root : t) =
-  let cur = ref (Node.down root.nodes.(i)) in
+let traverse_col i root (dir : dirn) ~by:f =
+  let cur =
+    match dir with
+    | Up -> ref (Node.up root.nodes.(i))
+    | Down -> ref (Node.down root.nodes.(i))
+    | _ -> failwith ""
+  in
+
   while !cur.id != i do
-    hide !cur.id root;
-    cur := Node.down !cur
-  done;
+    f !cur;
+    cur :=
+      match dir with
+      | Down -> Node.down !cur
+      | Up -> Node.up !cur
+      | _ -> failwith "traverse_col: can't traverse col in that direction. "
+  done
+
+let cover i (root : t) =
+  traverse_col i root Down ~by:(fun node -> hide node.id root);
   let l = Node.left root.nodes.(i) in
   let r = Node.right root.nodes.(i) in
   l.right <- Some r;
   r.left <- Some l
 
 let uncover i (root : t) =
-  let cur = ref (Node.up root.nodes.(i)) in
-  while !cur.id != i do
-    unhide !cur.id root;
-    cur := Node.up !cur
-  done;
+  traverse_col i root Up ~by:(fun node -> unhide node.id root);
   let l = Node.left root.nodes.(i) in
   let r = Node.right root.nodes.(i) in
   l.right <- Some root.nodes.(i);
