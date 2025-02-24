@@ -33,12 +33,14 @@ let () =
       [ "d"; "e"; "g" ];
     ]
   in
-  let cur1 = Dlx.Algox.mk ~items ~options in
-  (* CCFormat.printf "%a" Dlx.Algox.pp cur1;
-     CCFormat.printf "@.%a" Dlx.Algox.pp (Dlx.Algox.solve_dlx cur1);
-     let opt = Dlx.Algox.option_of 21 cur1 in
-     CCFormat.printf "@.Option of 19 = %a" CCFormat.Dump.(list string) opt *)
-  let row_nodes = Dlx.Algox.rows_of cur1 6 in
-  CCFormat.printf "@.Node list: %a"
-    CCFormat.Dump.(list Dlx.Node.pp_node)
-    row_nodes
+  let cur = Dlx.Algox.mk ~items ~options in
+  CCFormat.printf "%a" Dlx.Algox.pp cur;
+  ignore @@ Dlx.Algox.cover 6 cur;
+  CCFormat.printf "@.%a" Dlx.Algox.pp cur
+
+(* CCFormat.printf "@.%a" Dlx.Algox.pp (Dlx.Algox.solve_dlx cur) *)
+
+(* let row_nodes = Dlx.Algox.rows_of cur1 6 in
+   CCFormat.printf "@.Node list: %a"
+     CCFormat.Dump.(list Dlx.Node.pp_node)
+     row_nodes *)

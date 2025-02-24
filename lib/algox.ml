@@ -178,8 +178,7 @@ let traverse_row p (root : t) dir ~by:f =
         f !cur;
         cur := root.nodes.(step dir !cur.id)
       )
-  done;
-  root
+  done
 
 let hide p (root : t) =
   let unlink (node : Node.t) =
@@ -209,29 +208,25 @@ let unhide p (root : t) =
 
 let cover i (root : t) =
   let cur = ref (Node.down root.nodes.(i)) in
-  let curroot = ref root in
   while !cur.id != i do
-    curroot := hide !cur.id root;
+    hide !cur.id root;
     cur := Node.down !cur
   done;
   let l = Node.left root.nodes.(i) in
   let r = Node.right root.nodes.(i) in
   l.right <- Some r;
-  r.left <- Some l;
-  root
+  r.left <- Some l
 
 let uncover i (root : t) =
+  let cur = ref (Node.up root.nodes.(i)) in
+  while !cur.id != i do
+    unhide !cur.id root;
+    cur := Node.up !cur
+  done;
   let l = Node.left root.nodes.(i) in
   let r = Node.right root.nodes.(i) in
   l.right <- Some root.nodes.(i);
-  r.left <- Some root.nodes.(i);
-  let cur = ref (Node.up root.nodes.(i)) in
-  let curroot = ref root in
-  while !cur.id != i do
-    curroot := unhide !cur.id root;
-    cur := Node.up !cur
-  done;
-  root
+  r.left <- Some root.nodes.(i)
 
 let option_of i (root : t) =
   let cur =
@@ -245,9 +240,10 @@ let option_of i (root : t) =
      ans := name :: !ans)
     |> value ~default:()
   in
-  ignore @@ traverse_row i root Right ~by:collect;
+  traverse_row i root Right ~by:collect;
   CCList.rev !ans
 
+(** Return id's of all options corresponding to a column. *)
 let rows_of root i =
   let cur = ref (Node.down root.nodes.(i)) in
   let rows = ref [] in
@@ -255,27 +251,50 @@ let rows_of root i =
     rows := !cur :: !rows;
     cur := Node.down !cur
   done;
-  CCList.rev !rows
+  CCList.map (fun (x : Node.t) -> x.id) (CCList.rev !rows)
 
-let solve_dlx t =
-  let search ~depth =
-    let ans = ref [] in
-    (* Check if all items have been covered *)
-    if t.root.right = Some t.root then (
-      (* If all cols are covered, print the solution found. *)
-      CCFormat.printf "Solution found at depth %d!" depth;
-      CCFormat.printf "@.Solution: %a"
-        CCFormat.(list (list string))
-        (CCList.map (fun (node : Node.t) -> option_of node.id t) !ans)
-    ) else (
-      (* There are more columns to be covered.Let's choose one. *)
-      let cur_col = CCOption.get_exn_or "" t.root.right in
-      CCFormat.printf "@.Choosing node %a" Node.pp_node cur_col;
-      (* Cover chosen node. *)
-      ignore @@ cover cur_col.id t;
-      let xl = Node.down cur_col in
-      ans := !ans @ [ xl ]
-    )
+(*
+
+   function search():
+       if all columns are covered:
+           print "Solution found!" and return
+
+       col = choose a column  (* You already implemented this *)
+       cover(col)  (* Hide this column from further choices *)
+
+       for each row r in col:  (* Process each possible solution row *)
+           add r to partial solution
+
+           for each node n in row r:
+               cover(n.column)  (* Cover all columns in this row *)
+
+           search()  (* Recurse with reduced matrix *)
+
+           for each node n in row r:
+               uncover(n.column)  (* Restore columns after backtracking *)
+
+           remove r from partial solution
+
+       uncover(col)  (* Restore the chosen column before trying the next option *)
+*)
+
+let eval (o : unit option) : unit =
+  match o with
+  | Some u -> u
+  | None -> ()
+
+let solve_dlx (t : t) : string list list =
+  let ans = ref [] in
+  let solve acc =
+    let open CCOption in
+    if t.root.right = Some t.root then
+      ans := CCList.rev acc :: !ans
+    else
+      (let* cur_col = t.root.right in
+       cover cur_col.id t;
+       let+ down = cur_col.down in
+       traverse_row down.id t Right ~by:(fun n -> cover n.id t))
+      |> eval
   in
-  search ~depth:0;
-  t
+  solve [];
+  !ans
