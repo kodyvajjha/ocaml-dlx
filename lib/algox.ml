@@ -57,6 +57,8 @@ let pp fpf t =
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
+let show t = CCFormat.printf "@.%a" pp t
+
 let find_header_node ~name ~items root =
   let open Node in
   let num_items = CCList.length items in
@@ -163,8 +165,10 @@ let step d id =
 
 let traverse_row p (root : t) dir ~by:f =
   let cur = ref root.nodes.(step dir p) in
+  (* CCFormat.printf "@.%a" Node.pp_node !cur; *)
   (*Repeat until we are back were we started. *)
   while !cur.id != p do
+    CCFormat.printf "@.Traverse Row : (cur.id) = %d" !cur.id;
     match !cur.top with
     | None -> failwith "Current node doesn't have a top node!"
     | Some i ->
@@ -185,7 +189,8 @@ let traverse_row p (root : t) dir ~by:f =
         f !cur;
         cur := root.nodes.(step dir !cur.id)
       )
-  done
+  done;
+  CCFormat.printf "@.Traverse Row : Done!@."
 
 let hide p (root : t) =
   let unlink (node : Node.t) =
@@ -220,29 +225,40 @@ let traverse_col i root (dir : dirn) ~by:f =
     | Down -> ref (Node.down root.nodes.(i))
     | _ -> failwith ""
   in
-
   while !cur.id != i do
+    CCFormat.printf "@.Traverse Col : (cur.id) = %d" !cur.id;
     f !cur;
     cur :=
       match dir with
       | Down -> Node.down !cur
       | Up -> Node.up !cur
       | _ -> failwith "traverse_col: can't traverse col in that direction. "
-  done
+  done;
+  CCFormat.printf "@.Traverse Col : Done!@."
 
 let cover i (root : t) =
-  traverse_col i root Down ~by:(fun node -> hide node.id root);
-  let l = Node.left root.nodes.(i) in
-  let r = Node.right root.nodes.(i) in
-  l.right <- Some r;
-  r.left <- Some l
+  if i > CCList.length root.items then
+    failwith "You asked to cover a node! I can only cover an item."
+  else (
+    traverse_col i root Down ~by:(fun node -> hide node.id root);
+    let l = Node.left root.nodes.(i) in
+    let r = Node.right root.nodes.(i) in
+    l.right <- Some r;
+    r.left <- Some l;
+    CCFormat.printf "@.Covering done!"
+  )
 
 let uncover i (root : t) =
-  traverse_col i root Up ~by:(fun node -> unhide node.id root);
-  let l = Node.left root.nodes.(i) in
-  let r = Node.right root.nodes.(i) in
-  l.right <- Some root.nodes.(i);
-  r.left <- Some root.nodes.(i)
+  if i > CCList.length root.items then
+    failwith "You asked to uncover a node! I can only cover an item."
+  else (
+    traverse_col i root Up ~by:(fun node -> unhide node.id root);
+    let l = Node.left root.nodes.(i) in
+    let r = Node.right root.nodes.(i) in
+    l.right <- Some root.nodes.(i);
+    r.left <- Some root.nodes.(i);
+    CCFormat.printf "@.Uncover done!"
+  )
 
 let option_of i (root : t) =
   let cur =
@@ -299,18 +315,40 @@ let eval (o : unit option) : unit =
   | Some u -> u
   | None -> ()
 
-let solve_dlx (t : t) : string list list =
+let name_of root (node : Node.t) =
+  let name =
+    CCOption.(
+      let* topid = node.top in
+      root.nodes.(topid).name)
+  in
+  CCOption.value name ~default:"FAILED"
+
+let solve_dlx t : string list list =
   let ans = ref [] in
-  let solve acc =
+  let rec solve acc =
     let open CCOption in
-    if t.root.right = Some t.root then
+    CCFormat.printf "@.acc == %a" CCFormat.Dump.(list string) acc;
+    if t.root.right == Some t.root then (
+      CCFormat.printf "No more columns left!!! Ans = %a@."
+        CCFormat.Dump.(list (list string))
+        !ans;
       ans := CCList.rev acc :: !ans
-    else
+    ) else
       (let* cur_col = t.root.right in
-       cover cur_col.id t;
-       let+ down = cur_col.down in
-       traverse_row down.id t Right ~by:(fun n -> cover n.id t))
+       let+ remaining = cur_col.len in
+       if remaining > 0 then (
+         cover cur_col.id t;
+         traverse_col cur_col.id t Down ~by:(fun node ->
+             traverse_row node.id t Right ~by:(fun n ->
+                 cover (n.top |> value ~default:500) t);
+             solve (name_of t node :: acc);
+             traverse_row node.id t Left ~by:(fun n ->
+                 uncover (n.top |> value ~default:500) t));
+         uncover cur_col.id t
+       ))
       |> eval
   in
+  show t;
   solve [];
+  show t;
   !ans
