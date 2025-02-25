@@ -23,13 +23,13 @@ let () = Printexc.record_backtrace true
        node.name) *)
 
 let () =
-  let items = [ "a"; "b"; "c"; "d"; "e"; "f"; "g" ] in
+  let items = [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i" ] in
   let options =
     [
-      [ "c"; "e" ];
+      [ "c"; "e"; "h" ];
       [ "a"; "d"; "g" ];
       [ "b"; "c"; "f" ];
-      [ "a"; "d"; "f" ];
+      [ "a"; "d"; "f"; "i" ];
       [ "b"; "g" ];
       [ "d"; "e"; "g" ];
     ]

@@ -168,7 +168,7 @@ let traverse_row p (root : t) dir ~by:f =
   (* CCFormat.printf "@.%a" Node.pp_node !cur; *)
   (*Repeat until we are back were we started. *)
   while !cur.id != p do
-    CCFormat.printf "@.Traverse Row : (cur.id) = %d" !cur.id;
+    (* CCFormat.printf "@.Traverse Row : (cur.id) = %d" !cur.id; *)
     match !cur.top with
     | None -> failwith "Current node doesn't have a top node!"
     | Some i ->
@@ -189,8 +189,8 @@ let traverse_row p (root : t) dir ~by:f =
         f !cur;
         cur := root.nodes.(step dir !cur.id)
       )
-  done;
-  CCFormat.printf "@.Traverse Row : Done!@."
+  done
+(* CCFormat.printf "@.Traverse Row : Done!@." *)
 
 let hide p (root : t) =
   let unlink (node : Node.t) =
@@ -226,15 +226,15 @@ let traverse_col i root (dir : dirn) ~by:f =
     | _ -> failwith ""
   in
   while !cur.id != i do
-    CCFormat.printf "@.Traverse Col : (cur.id) = %d" !cur.id;
+    (* CCFormat.printf "@.Traverse Col : (cur.id) = %d" !cur.id; *)
     f !cur;
     cur :=
       match dir with
       | Down -> Node.down !cur
       | Up -> Node.up !cur
       | _ -> failwith "traverse_col: can't traverse col in that direction. "
-  done;
-  CCFormat.printf "@.Traverse Col : Done!@."
+  done
+(* CCFormat.printf "@.Traverse Col : Done!@." *)
 
 let cover i (root : t) =
   if i > CCList.length root.items then
@@ -244,8 +244,8 @@ let cover i (root : t) =
     let l = Node.left root.nodes.(i) in
     let r = Node.right root.nodes.(i) in
     l.right <- Some r;
-    r.left <- Some l;
-    CCFormat.printf "@.Covering done!"
+    r.left <- Some l
+    (* CCFormat.printf "@.Covering done!" *)
   )
 
 let uncover i (root : t) =
@@ -256,8 +256,8 @@ let uncover i (root : t) =
     let l = Node.left root.nodes.(i) in
     let r = Node.right root.nodes.(i) in
     l.right <- Some root.nodes.(i);
-    r.left <- Some root.nodes.(i);
-    CCFormat.printf "@.Uncover done!"
+    r.left <- Some root.nodes.(i)
+    (* CCFormat.printf "@.Uncover done!" *)
   )
 
 let option_of i (root : t) =
@@ -275,53 +275,10 @@ let option_of i (root : t) =
   traverse_row i root Right ~by:collect;
   CCList.rev !ans
 
-(** Return id's of all options corresponding to a column. *)
-let rows_of root i =
-  let cur = ref (Node.down root.nodes.(i)) in
-  let rows = ref [] in
-  while !cur.id != i do
-    rows := !cur :: !rows;
-    cur := Node.down !cur
-  done;
-  CCList.map (fun (x : Node.t) -> x.id) (CCList.rev !rows)
-
-(*
-
-   function search():
-       if all columns are covered:
-           print "Solution found!" and return
-
-       col = choose a column  (* You already implemented this *)
-       cover(col)  (* Hide this column from further choices *)
-
-       for each row r in col:  (* Process each possible solution row *)
-           add r to partial solution
-
-           for each node n in row r:
-               cover(n.column)  (* Cover all columns in this row *)
-
-           search()  (* Recurse with reduced matrix *)
-
-           for each node n in row r:
-               uncover(n.column)  (* Restore columns after backtracking *)
-
-           remove r from partial solution
-
-       uncover(col)  (* Restore the chosen column before trying the next option *)
-*)
-
 let eval (o : unit option) : unit =
   match o with
   | Some u -> u
   | None -> ()
-
-let name_of root (node : Node.t) =
-  let name =
-    CCOption.(
-      let* topid = node.top in
-      root.nodes.(topid).name)
-  in
-  CCOption.value name ~default:"FAILED"
 
 let solve_dlx t : string list list =
   let ans = ref [] in
@@ -331,8 +288,8 @@ let solve_dlx t : string list list =
       ans := CCList.rev acc @ !ans
     else
       (let* cur_col = t.root.right in
-       CCFormat.printf "@.Cur col : %a" Node.pp_node cur_col;
-       CCFormat.printf "@.Ans : %a" CCFormat.Dump.(list (list string)) !ans;
+       (* CCFormat.printf "@.Cur col : %a" Node.pp_node cur_col; *)
+       (* CCFormat.printf "@.Ans : %a" CCFormat.Dump.(list (list string)) !ans; *)
        let+ remaining = cur_col.len in
        if remaining > 0 then (
          cover cur_col.id t;
