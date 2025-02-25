@@ -37,7 +37,7 @@ let () =
   let cur = Dlx.Algox.mk ~items ~options in
   (* CCFormat.printf "%a" Dlx.Algox.pp cur; *)
   CCFormat.printf "@.Ans = %a"
-    CCFormat.(list (list string))
+    CCFormat.Dump.(list (list string))
     (Dlx.Algox.solve_dlx cur)
 
 (* let row_nodes = Dlx.Algox.rows_of cur1 6 in

@@ -327,28 +327,24 @@ let solve_dlx t : string list list =
   let ans = ref [] in
   let rec solve acc =
     let open CCOption in
-    CCFormat.printf "@.acc == %a" CCFormat.Dump.(list string) acc;
-    if t.root.right == Some t.root then (
-      CCFormat.printf "No more columns left!!! Ans = %a@."
-        CCFormat.Dump.(list (list string))
-        !ans;
-      ans := CCList.rev acc :: !ans
-    ) else
+    if map (fun (n : Node.t) -> n.id) t.root.right = Some 0 then
+      ans := CCList.rev acc @ !ans
+    else
       (let* cur_col = t.root.right in
+       CCFormat.printf "@.Cur col : %a" Node.pp_node cur_col;
+       CCFormat.printf "@.Ans : %a" CCFormat.Dump.(list (list string)) !ans;
        let+ remaining = cur_col.len in
        if remaining > 0 then (
          cover cur_col.id t;
          traverse_col cur_col.id t Down ~by:(fun node ->
              traverse_row node.id t Right ~by:(fun n ->
                  cover (n.top |> value ~default:500) t);
-             solve (name_of t node :: acc);
+             solve (option_of node.id t :: acc);
              traverse_row node.id t Left ~by:(fun n ->
                  uncover (n.top |> value ~default:500) t));
          uncover cur_col.id t
        ))
       |> eval
   in
-  show t;
   solve [];
-  show t;
   !ans
