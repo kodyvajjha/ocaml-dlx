@@ -280,12 +280,12 @@ let eval (o : unit option) : unit =
   | Some u -> u
   | None -> ()
 
-let solve_dlx t : string list list =
+let solve_dlx t : string list list list =
   let ans = ref [] in
   let rec solve acc =
     let open CCOption in
     if map (fun (n : Node.t) -> n.id) t.root.right = Some 0 then
-      ans := CCList.rev acc @ !ans
+      ans := [ CCList.rev acc ] @ !ans
     else
       (let* cur_col = t.root.right in
        (* CCFormat.printf "@.Cur col : %a" Node.pp_node cur_col; *)
