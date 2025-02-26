@@ -1,4 +1,4 @@
 (executables
- (names main dll)
- (public_names dlx dll)
+ (names main dll langford)
+ (public_names dlx dll langford)
  (libraries dlx))
