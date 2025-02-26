@@ -28,7 +28,7 @@ jobs:
       - name: Update package lists
         run: sudo apt-get update
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
       - name: Install project dependencies
