@@ -25,11 +25,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      - name: Update package lists
+        run: sudo apt-get update
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          with-system-packages: false 
       - name: Install project dependencies
         run: opam install . --deps-only --with-doc --with-test
       - name: Build the project
