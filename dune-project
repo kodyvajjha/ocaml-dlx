@@ -5,9 +5,9 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github kodyvajjha/ocaml-dlx))
 
-(authors "Author Name")
+(authors "Koundinya Vajjha")
 
 (maintainers "Maintainer Name")
 
@@ -19,7 +19,7 @@
  (name dlx)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends ocaml dune containers printbox printbox-text)
  (tags
   (topics "to describe" your project)))
 
