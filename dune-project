@@ -19,7 +19,7 @@
  (name dlx)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune containers printbox printbox-text)
+ (depends ocaml dune containers printbox printbox-text ppx_deriving)
  (tags
   (topics "to describe" your project)))
 
