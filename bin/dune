@@ -1,4 +1,4 @@
 (executables
- (names main dll langford sudoku)
- (public_names dlx dll langford sudoku)
+ (names main dll langford sudoku menages)
+ (public_names dlx dll langford sudoku menages)
  (libraries dlx containers))
