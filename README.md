@@ -71,7 +71,7 @@ Some white-box tests can be run with
 make tests
 ```
 
-Example usage of this program to solve Sudoku, the [https://en.wikipedia.org/wiki/M%C3%A9nage_problem](Ménage problem)
+Example usage of this program to solve Sudoku, the [Ménage problem](https://en.wikipedia.org/wiki/M%C3%A9nage_problem)
 and the Langford pairs problem are shown in the `bin` directory. You can run them
 as: 
 
