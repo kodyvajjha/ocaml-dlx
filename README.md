@@ -6,11 +6,12 @@ cover problem using dancing links.
 
 For example, given items `["a";"b";"c";"d"]` and options 
 `[["a";"d"];["a";"b"];["c";"b"]]`,the DLX algorithm computes all exact covers of
-the items (a partition of the items set consisting of options set).So in this 
+the items (a partition of the set of items using the options set). So in this 
 case we return `[[["a";"d"];["b";"c"]]]`. 
 
 This algorithm backtracks over a data structure consisting of vertical doubly 
-linked lists where the items are joined to corresponding options:
+linked lists where the items are joined to corresponding options. Here is a 
+picture of this data structure for the above example:
 
 ``` 
 ┌────────────────┬──────────────┬──────────────┬──────────────┬──────────────┬┐
@@ -56,10 +57,33 @@ linked lists where the items are joined to corresponding options:
 └────────────────┴──────────────┴──────────────┴──────────────┴──────────────┴┘
 ```
 
+# Usage 
+
+To install this library, you will need to install opam and OCaml. Then do:
+
+```
+make opam-install-deps
+make build
+```
+
+Some white-box tests can be run with
+```
+make tests
+```
+
+Example usage of this program to solve Sudoku, the [https://en.wikipedia.org/wiki/M%C3%A9nage_problem](Ménage problem)
+and the Langford pairs problem are shown in the `bin` directory. You can run them
+as: 
+
+``` 
+opam exec -- dune exec langford
+opam exec -- dune exec sudoku
+opam exec -- dune exec menages
+```
 
 ## TODO
 
-1. MRV heuristic.
-2. n-Queens
-3. Sudoku
-4. XCC
+1. MRV heuristic: currently we do the naive thing of picking the first uncovered column when branching in the search tree. This is clearly inefficient (but gets the job done in toy examples). Knuth suggests the MRV heuristic to pick that column which has the least number of remaining items under it. 
+2. n-Queens: Should be trivial, but to do it *correctly* needs implementation of "slack options".
+3. Progress reports.
+4. More problems! (Pentominos, Tilings, ...)

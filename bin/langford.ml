@@ -27,14 +27,12 @@ let generate_options n =
   in
   generate 1 []
 
-(* Compare https://oeis.org/A014552 *)
+(* Compare https://oeis.org/A176127 *)
 let () =
-  let n = 16 in
+  let n = 12 in
   let items = generate_items n in
   let options = generate_options n in
-  CCFormat.printf "@.Setting up data structure....";
   let cur = Dlx.Algox.mk ~items ~options in
-  CCFormat.printf "@.Starting....";
   CCFormat.printf "Items = %a@.Options = %a@.Solution(s) = %d"
     CCFormat.Dump.(list string)
     cur.items
