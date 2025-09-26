@@ -57,7 +57,7 @@ let pp fpf t =
   in
   CCFormat.fprintf fpf "%a" PrintBox_text.pp main_box
 
-let show t = CCFormat.printf "@.%a" pp t
+let _show t = CCFormat.printf "@.%a" pp t
 
 let find_header_node ~name ~items root =
   let open Node in
