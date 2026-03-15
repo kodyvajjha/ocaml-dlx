@@ -83,7 +83,7 @@ opam exec -- dune exec menages
 
 ## TODO
 
-1. MRV heuristic: currently we do the naive thing of picking the first uncovered column when branching in the search tree. This is clearly inefficient (but gets the job done in toy examples). Knuth suggests the MRV heuristic to pick that column which has the least number of remaining items under it. 
+1. ~~MRV heuristic: currently we do the naive thing of picking the first uncovered column when branching in the search tree. This is clearly inefficient (but gets the job done in toy examples). Knuth suggests the MRV heuristic to pick that column which has the least number of remaining items under it.~~ **Done**: `choose_min_col` in `lib/algox.ml` implements this heuristic.
 2. n-Queens: Should be trivial, but to do it *correctly* needs implementation of "slack options".
 3. Progress reports.
 4. More problems! (Pentominos, Tilings, ...)
