@@ -280,17 +280,28 @@ let eval (o : unit option) : unit =
   | Some u -> u
   | None -> ()
 
+(** Choose the column with the minimum number of remaining items (MRV heuristic). *)
+let choose_min_col (root : t) : Node.t =
+  let open Node in
+  let best = ref (right root.root) in
+  let cur = ref (right !best) in
+  while !cur.id <> root.root.id do
+    (match !cur.len, !best.len with
+    | Some cl, Some bl -> if cl < bl then best := !cur
+    | _ -> ());
+    cur := right !cur
+  done;
+  !best
+
 let solve_dlx t : string list list list =
   let ans = ref [] in
   let rec solve acc =
     let open CCOption in
-    if map (fun (n : Node.t) -> n.id) t.root.right = Some 0 then
+    if (Node.right t.root).id = t.root.id then
       ans := [ CCList.rev acc ] @ !ans
     else
-      (let* cur_col = t.root.right in
-       (* CCFormat.printf "@.Cur col : %a" Node.pp_node cur_col; *)
-       (* CCFormat.printf "@.Ans : %a" CCFormat.Dump.(list (list string)) !ans; *)
-       let+ remaining = cur_col.len in
+      let cur_col = choose_min_col t in
+      (let+ remaining = cur_col.len in
        if remaining > 0 then (
          cover cur_col.id t;
          traverse_col cur_col.id t Down ~by:(fun node ->
