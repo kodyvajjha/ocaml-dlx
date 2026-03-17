@@ -5,6 +5,10 @@ type t = {
   options: string list list;
 }
 
+let src = Logs.Src.create "dlx" ~doc:"DLX solver progress"
+
+module Log = (val Logs.src_log src : Logs.LOG)
+
 (** Get the row and column of sparse matrix representing the node in question. Used mainly for printing. *)
 let rowcol t node =
   let open Node in
@@ -165,10 +169,8 @@ let step d id =
 
 let traverse_row p (root : t) dir ~by:f =
   let cur = ref root.nodes.(step dir p) in
-  (* CCFormat.printf "@.%a" Node.pp_node !cur; *)
   (*Repeat until we are back were we started. *)
   while !cur.id != p do
-    (* CCFormat.printf "@.Traverse Row : (cur.id) = %d" !cur.id; *)
     match !cur.top with
     | None -> failwith "Current node doesn't have a top node!"
     | Some i ->
@@ -189,8 +191,9 @@ let traverse_row p (root : t) dir ~by:f =
         f !cur;
         cur := root.nodes.(step dir !cur.id)
       )
-  done
-(* CCFormat.printf "@.Traverse Row : Done!@." *)
+  done;
+  Log.debug (fun m -> m "traverse_row: done (p=%d, dir=%s)" p
+    (match dir with Left -> "Left" | Right -> "Right" | _ -> "?"))
 
 let hide p (root : t) =
   let unlink (node : Node.t) =
@@ -226,15 +229,15 @@ let traverse_col i root (dir : dirn) ~by:f =
     | _ -> failwith ""
   in
   while !cur.id != i do
-    (* CCFormat.printf "@.Traverse Col : (cur.id) = %d" !cur.id; *)
     f !cur;
     cur :=
       match dir with
       | Down -> Node.down !cur
       | Up -> Node.up !cur
       | _ -> failwith "traverse_col: can't traverse col in that direction. "
-  done
-(* CCFormat.printf "@.Traverse Col : Done!@." *)
+  done;
+  Log.debug (fun m -> m "traverse_col: done (i=%d, dir=%s)" i
+    (match dir with Up -> "Up" | Down -> "Down" | _ -> "?"))
 
 let cover i (root : t) =
   if i > CCList.length root.items then
@@ -244,8 +247,8 @@ let cover i (root : t) =
     let l = Node.left root.nodes.(i) in
     let r = Node.right root.nodes.(i) in
     l.right <- Some r;
-    r.left <- Some l
-    (* CCFormat.printf "@.Covering done!" *)
+    r.left <- Some l;
+    Log.debug (fun m -> m "cover: id=%d" i)
   )
 
 let uncover i (root : t) =
@@ -256,8 +259,8 @@ let uncover i (root : t) =
     let l = Node.left root.nodes.(i) in
     let r = Node.right root.nodes.(i) in
     l.right <- Some root.nodes.(i);
-    r.left <- Some root.nodes.(i)
-    (* CCFormat.printf "@.Uncover done!" *)
+    r.left <- Some root.nodes.(i);
+    Log.debug (fun m -> m "uncover: id=%d" i)
   )
 
 let option_of i (root : t) =
@@ -295,24 +298,46 @@ let choose_min_col (root : t) : Node.t =
 
 let solve_dlx t : string list list list =
   let ans = ref [] in
-  let rec solve acc =
+  let nodes_explored = ref 0 in
+  Log.info (fun m ->
+      m "Starting DLX solve: %d items, %d options"
+        (List.length t.items) (List.length t.options));
+  let rec solve depth acc =
     let open CCOption in
-    if (Node.right t.root).id = t.root.id then
-      ans := [ CCList.rev acc ] @ !ans
-    else
+    if (Node.right t.root).id = t.root.id then (
+      ans := [ CCList.rev acc ] @ !ans;
+      Log.info (fun m ->
+          m "Solution #%d found (depth=%d, nodes explored=%d)"
+            (List.length !ans) depth !nodes_explored)
+    ) else
       let cur_col = choose_min_col t in
       (let+ remaining = cur_col.len in
-       if remaining > 0 then (
+       let col_name = value cur_col.name ~default:"?" in
+       Log.debug (fun m ->
+           m "depth=%d: choosing column '%s' (remaining=%d)" depth col_name
+             remaining);
+       if remaining = 0 then
+         Log.debug (fun m ->
+             m "depth=%d: dead end — column '%s' has no options" depth col_name)
+       else (
          cover cur_col.id t;
          traverse_col cur_col.id t Down ~by:(fun node ->
+             incr nodes_explored;
+             let opt = option_of node.id t in
+             Log.debug (fun m ->
+                 m "depth=%d: trying option [%s]" depth
+                   (String.concat " " opt));
              traverse_row node.id t Right ~by:(fun n ->
                  cover (n.top |> value ~default:500) t);
-             solve (option_of node.id t :: acc);
+             solve (depth + 1) (opt :: acc);
              traverse_row node.id t Left ~by:(fun n ->
                  uncover (n.top |> value ~default:500) t));
          uncover cur_col.id t
        ))
       |> eval
   in
-  solve [];
+  solve 0 [];
+  Log.info (fun m ->
+      m "DLX complete: %d solution(s) found, %d nodes explored"
+        (List.length !ans) !nodes_explored);
   !ans

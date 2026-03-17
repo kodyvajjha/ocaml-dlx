@@ -85,5 +85,11 @@ opam exec -- dune exec menages
 
 1. ~~MRV heuristic: currently we do the naive thing of picking the first uncovered column when branching in the search tree. This is clearly inefficient (but gets the job done in toy examples). Knuth suggests the MRV heuristic to pick that column which has the least number of remaining items under it.~~ **Done**: `choose_min_col` in `lib/algox.ml` implements this heuristic.
 2. n-Queens: Should be trivial, but to do it *correctly* needs implementation of "slack options".
-3. Progress reports.
+3. ~~Progress reports.~~ **Done**: `solve_dlx` emits structured log messages via the OCaml `Logs` library. Set a reporter and level before calling it:
+   ```ocaml
+   Logs.set_reporter (Logs_fmt.reporter ());
+   Logs.set_level (Some Logs.Info);   (* or Logs.Debug for per-option traces *)
+   (* or, to control only the DLX source: *)
+   Logs.Src.set_level Dlx.Algox.src (Some Logs.Info);
+   ```
 4. More problems! (Pentominos, Tilings, ...)

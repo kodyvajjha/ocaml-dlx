@@ -16,7 +16,8 @@ depends: [
   "printbox"
   "printbox-text"
   "ppx_deriving"
-  "odoc" {with-doc}
+  "logs"
+  "logs-fmt"
 ]
 build: [
   ["dune" "subst"] {dev}
