@@ -16,6 +16,8 @@ depends: [
   "printbox"
   "printbox-text"
   "ppx_deriving"
+  "logs"
+  "logs-fmt"
   "odoc" {with-doc}
 ]
 build: [
